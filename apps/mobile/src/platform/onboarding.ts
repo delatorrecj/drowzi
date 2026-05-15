@@ -32,11 +32,26 @@ export async function clearAlarmSetupSkipFlags(): Promise<void> {
   await AsyncStorage.multiRemove([storageKeys.alarmSetupSkipped, storageKeys.setupReminderShown]);
 }
 
+export async function getDisplayName(): Promise<string> {
+  const raw = await AsyncStorage.getItem(storageKeys.displayName);
+  return raw?.trim() ?? '';
+}
+
+export async function setDisplayName(name: string): Promise<void> {
+  const trimmed = name.trim();
+  if (trimmed === '') {
+    await AsyncStorage.removeItem(storageKeys.displayName);
+    return;
+  }
+  await AsyncStorage.setItem(storageKeys.displayName, trimmed);
+}
+
 /** Dev / QA — wipe onboarding + skip reminder flags (does not delete alarms). */
 export async function resetOnboardingFlagsDev(): Promise<void> {
   await AsyncStorage.multiRemove([
     storageKeys.onboardingComplete,
     storageKeys.alarmSetupSkipped,
     storageKeys.setupReminderShown,
+    storageKeys.displayName,
   ]);
 }
