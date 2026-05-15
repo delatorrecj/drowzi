@@ -1,121 +1,159 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 
-import { setOnboardingComplete } from '@/src/platform/onboarding';
-import { palette } from '@/src/shared/theme';
+import {
+  PHYSICAL_SETUP_CATEGORY,
+  buildHabitConfigFromInputs,
+  normalizeAlarmTime,
+} from '@/src/features/alarm/alarmSetupShared';
+import { alarmSetupScreenOptions, alarmSetupStyles as styles } from '@/src/features/alarm/alarmSetupStyles';
+import {
+  clearAlarmSetupSkipFlags,
+  setAlarmSetupSkipped,
+  setOnboardingComplete,
+} from '@/src/platform/onboarding';
+import { saveAlarm } from '@/src/platform/alarmStore';
+import { dashboardTheme } from '@/src/shared/dashboardTheme';
 
-const STEPS = [
-  {
-    title: 'Drowzi',
-    body: 'Your alarm stays on until a real habit is done — not another swipe puzzle.',
-  },
-  {
-    title: 'Pick your gate',
-    body: 'Motion, barcode scan, or voice — each ties urgency to a habit you already want.',
-  },
-  {
-    title: 'Lock it in',
-    body: 'Next: set your first alarm from Home. Use Simulate alarm to demo without waiting.',
-  },
-] as const;
-
-export default function OnboardingScreen() {
-  const [step, setStep] = useState(0);
-  const last = step >= STEPS.length - 1;
-
-  return (
-    <View style={styles.screen}>
-      <Stack.Screen options={{ title: 'Welcome', headerTintColor: palette.groundedBrown }} />
-      <View style={styles.content}>
-        <Text style={styles.kicker}>
-          Step {step + 1} / {STEPS.length}
-        </Text>
-        <Text style={styles.title}>{STEPS[step].title}</Text>
-        <Text style={styles.body}>{STEPS[step].body}</Text>
-      </View>
-
-      <View style={styles.footer}>
-        {!last ? (
-          <Pressable style={styles.primary} onPress={() => setStep((s) => s + 1)}>
-            <Text style={styles.primaryLabel}>Next</Text>
-          </Pressable>
-        ) : (
-          <Pressable
-            style={styles.primary}
-            onPress={async () => {
-              await setOnboardingComplete(true);
-              router.replace('/(tabs)');
-            }}>
-            <Text style={styles.primaryLabel}>Enter app</Text>
-          </Pressable>
-        )}
-        <Pressable
-          style={styles.ghost}
-          onPress={async () => {
-            await setOnboardingComplete(true);
-            router.replace('/(tabs)');
-          }}>
-          <Text style={styles.ghostLabel}>Skip</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
+function finishOnboardingSkip() {
+  void setAlarmSetupSkipped(true);
+  void setOnboardingComplete(true);
+  router.replace('/(tabs)');
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    backgroundColor: palette.surfaceLight,
-  },
-  content: {
-    flex: 1,
-    gap: 12,
-  },
-  kicker: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: palette.groundedBrown,
-    opacity: 0.7,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  title: {
-    marginTop: 12,
-    fontSize: 34,
-    fontWeight: '900',
-    color: palette.groundedBrown,
-  },
-  body: {
-    marginTop: 16,
-    fontSize: 17,
-    lineHeight: 26,
-    color: palette.groundedBrown,
-  },
-  footer: {
-    paddingBottom: 32,
-    gap: 12,
-  },
-  primary: {
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: palette.adrenalineRed,
-    alignItems: 'center',
-  },
-  primaryLabel: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '800',
-  },
-  ghost: {
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  ghostLabel: {
-    color: palette.groundedBrown,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+export default function OnboardingScreen() {
+  const { resumeStep } = useLocalSearchParams<{ resumeStep?: string }>();
+
+  const [step, setStep] = useState(0);
+  const [timeInput, setTimeInput] = useState('06:30');
+  const [repInput, setRepInput] = useState('10');
+
+  const selectedCategory = PHYSICAL_SETUP_CATEGORY;
+
+  useEffect(() => {
+    if (resumeStep === '1' || resumeStep === '2') {
+      setStep(1);
+    }
+  }, [resumeStep]);
+
+  const habitConfig = useMemo(
+    () => buildHabitConfigFromInputs(selectedCategory.habitType, repInput, '', ''),
+    [selectedCategory.habitType, repInput],
+  );
+
+  async function handleFinish() {
+    const time = normalizeAlarmTime(timeInput);
+    if (!time) {
+      Alert.alert('Check the time', 'Use 24h format like 06:30 or 18:45.');
+      return;
+    }
+
+    const alarm = {
+      id: `alarm-${Date.now()}`,
+      userId: 'local-user',
+      time,
+      recurrence: { type: 'daily' as const },
+      habitType: selectedCategory.habitType,
+      habitConfig,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    };
+
+    await saveAlarm(alarm);
+    await clearAlarmSetupSkipFlags();
+    await setOnboardingComplete(true);
+    router.replace('/(tabs)');
+  }
+
+  const headerTitle = step === 0 ? 'Welcome' : 'Alarm & reps';
+
+  return (
+    <SafeAreaView style={styles.flex} edges={['bottom']}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Stack.Screen
+          options={{
+            title: headerTitle,
+            ...alarmSetupScreenOptions,
+          }}
+        />
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          {step === 0 ? (
+            <View style={styles.block}>
+              <Text style={styles.kicker}>Meet Drowzi</Text>
+              <Text style={styles.hero}>Grogginess loses. Your habit wins.</Text>
+              <Text style={styles.body}>
+                For now your alarm is gated by one thing only: a physical habit — reps counted by motion so you
+                actually get out of sleep inertia. More habit types come later.
+              </Text>
+              <Text style={styles.bodyMuted}>Two quick steps. Under two minutes.</Text>
+            </View>
+          ) : (
+            <View style={styles.block}>
+              <Text style={styles.kicker}>Step 2 of 2</Text>
+              <Text style={styles.title}>When & how many reps</Text>
+              <Text style={styles.lede}>Motion-only · {selectedCategory.subtitle}</Text>
+
+              <Text style={styles.label}>Wake time (24h)</Text>
+              <TextInput
+                value={timeInput}
+                onChangeText={setTimeInput}
+                keyboardType="numbers-and-punctuation"
+                placeholder="06:30"
+                placeholderTextColor={dashboardTheme.placeholderMuted}
+                style={styles.input}
+                accessibilityLabel="Alarm time in 24 hour format"
+              />
+
+              <Text style={styles.label}>Rep target</Text>
+              <TextInput
+                value={repInput}
+                onChangeText={setRepInput}
+                keyboardType="number-pad"
+                style={styles.input}
+                accessibilityLabel="Number of repetitions"
+              />
+            </View>
+          )}
+
+          <View style={styles.footer}>
+            {step > 0 ? (
+              <Pressable style={styles.secondary} onPress={() => setStep(0)}>
+                <Text style={styles.secondaryLabel}>Back</Text>
+              </Pressable>
+            ) : null}
+
+            {step === 0 ? (
+              <Pressable style={styles.primary} onPress={() => setStep(1)}>
+                <Text style={styles.primaryLabel}>Next</Text>
+              </Pressable>
+            ) : (
+              <Pressable style={styles.primary} onPress={() => void handleFinish()}>
+                <Text style={styles.primaryLabel}>Save first alarm</Text>
+              </Pressable>
+            )}
+
+            <Pressable style={styles.ghost} onPress={finishOnboardingSkip}>
+              <Text style={styles.ghostLabel}>Skip for now</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}

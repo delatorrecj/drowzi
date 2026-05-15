@@ -5,17 +5,6 @@ import type { Alarm } from '@/src/shared/types';
 import { cancelAlarm, scheduleAlarm } from '@/src/platform/alarmScheduler';
 import { storageKeys } from '@/src/platform/storage';
 
-const DEMO_ALARM: Alarm = {
-  id: 'demo-alarm',
-  userId: 'local-dev',
-  time: '06:30',
-  recurrence: { type: 'daily' },
-  habitType: 'motion',
-  habitConfig: { configVersion: 1, repTarget: 10 },
-  isActive: true,
-  createdAt: new Date().toISOString(),
-};
-
 async function readRaw(): Promise<Alarm[]> {
   const raw = await AsyncStorage.getItem(storageKeys.alarms);
   if (!raw) return [];
@@ -31,14 +20,9 @@ async function writeRaw(alarms: Alarm[]): Promise<void> {
   await AsyncStorage.setItem(storageKeys.alarms, JSON.stringify(alarms));
 }
 
+/** No implicit demo alarm — first alarm comes from onboarding (PRD US-05). */
 export async function getAlarms(): Promise<Alarm[]> {
-  const alarms = await readRaw();
-  if (alarms.length === 0) {
-    await writeRaw([DEMO_ALARM]);
-    await scheduleAlarm(DEMO_ALARM);
-    return [DEMO_ALARM];
-  }
-  return alarms;
+  return readRaw();
 }
 
 export async function getAlarmById(id: string): Promise<Alarm | null> {

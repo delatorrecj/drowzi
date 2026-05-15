@@ -19,3 +19,17 @@ Pin changes during the hackathon; extend types in `src/shared/types.ts`.
 - **Gate UI registry:** `habitGateRegistry` — `src/features/habits/registry.ts`
 
 Router entry from alarms: `router.push(\`/habit-gate/${alarm.id}\`)`.
+
+## Onboarding (PRD US-05)
+
+First launch hits `/` (`app/index.tsx`) → redirects to `/onboarding` until onboarding is marked complete.
+
+**Screens:** (1) welcome / brand, (2) alarm time + **motion rep target** only (`motion` habit). Environmental / voice setup UI is muted — see `ALARM_SETUP_CATEGORIES` filter in `alarmSetupShared.ts`.
+
+**Finish:** persists via `saveAlarm` — Home shows the first alarm.
+
+**Add more alarms:** `app/add-alarm.tsx` — motion-only single screen, then `router.back()`.
+
+**Resume onboarding shortcut:** `/onboarding?resumeStep=1` or `resumeStep=2` opens step 2 (alarm details).
+
+**Skip:** sets AsyncStorage skip flags → Home fires a **one-time** alert; use **`/add-alarm`** or **`/onboarding`** to finish setup.

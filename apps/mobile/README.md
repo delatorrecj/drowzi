@@ -44,13 +44,15 @@ npm run start
 
 | Path | Owner (see `docs/plan-dev-workflow-split.md`) |
 |------|-----------------------------------------------|
-| `src/platform/` | Notifications, persistence, sync, alarm scheduling |
+| `src/platform/` | Notifications, **local persistence** (AsyncStorage), alarm scheduling |
 | `src/features/habits/` | Habit gates + `registry.ts` |
-| `src/shared/` | Types, theme, Zod habit config parsing |
+| `src/features/dashboard/` | Dashboard mascot placeholder + layout helpers |
+| `assets/dashboard/` | Pixel mascot PNGs — see `ASSETS.md` |
+| `src/shared/` | Types, themes (`dashboardTheme`, palette), Zod habit config parsing |
 | `app/` | Routes only — keep thin |
 
 Integration cheat sheet: `CONTRACT.md`.
 
-## Env (later)
+## Env
 
-Copy `.env.example` to `.env` — never commit secrets.
+Optional: `.env.example` — only if you add backend keys later; **V1 in this repo is local-only**.
