@@ -1,4 +1,8 @@
+import PhoneMockup from "@/components/PhoneMockup";
+import { SiteIcon } from "@/components/SiteIcons";
 import { COPY } from "@/lib/constants";
+
+const GATE_VARIANTS = ["motion", "barcode", "voice"] as const;
 
 export default function HowItWorksSection() {
   return (
@@ -39,7 +43,12 @@ export default function HowItWorksSection() {
                 borderTopColor: "#F4C430",
               }}
             >
-              <span className="text-4xl">{gate.icon}</span>
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-xl text-[#F4C430]"
+                style={{ backgroundColor: "rgba(244, 196, 48, 0.1)" }}
+              >
+                <SiteIcon name={gate.icon} className="w-7 h-7" />
+              </div>
               <h3
                 className="font-display font-bold text-xl"
                 style={{ color: "#F5E6C8" }}
@@ -53,12 +62,14 @@ export default function HowItWorksSection() {
                 {gate.body}
               </p>
 
-              {/* Phone mockup placeholder — swap with real screenshot */}
               <div
-                className="mt-auto w-full h-40 rounded-2xl flex items-center justify-center"
+                className="mt-auto w-full rounded-2xl overflow-hidden py-4"
                 style={{ backgroundColor: "#1A1209", border: "1px solid #4A3015" }}
               >
-                <span className="text-4xl opacity-40">{gate.icon}</span>
+                <PhoneMockup
+                  variant={GATE_VARIANTS[i]}
+                  size="sm"
+                />
               </div>
             </div>
           ))}

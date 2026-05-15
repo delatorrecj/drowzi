@@ -40,8 +40,32 @@ export async function isNotificationPermissionGranted(): Promise<boolean> {
  * Earliest next fire implied by recurrence + clock time (Expo calculation; not a proof the OS queued it).
  */
 export async function getEarliestNextTriggerMsForAlarm(alarm: Alarm): Promise<number | null> {
-  if (Platform.OS === 'web') return null;
   const triggers = triggersFor(alarm);
+  if (Platform.OS === 'web') {
+    let best: number | null = null;
+    for (const trigger of triggers) {
+      let ms: number | null = null;
+      if ('hour' in trigger && 'minute' in trigger) {
+        const now = new Date();
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), trigger.hour, trigger.minute, 0, 0);
+        
+        if (trigger.type === SchedulableTriggerInputTypes.DAILY) {
+          if (d.getTime() <= now.getTime()) d.setDate(d.getDate() + 1);
+          ms = d.getTime();
+        } else if (trigger.type === SchedulableTriggerInputTypes.WEEKLY) {
+          while (d.getDay() !== (trigger.weekday % 7) || d.getTime() <= now.getTime()) {
+            d.setDate(d.getDate() + 1);
+          }
+          ms = d.getTime();
+        }
+      } else if (trigger.type === SchedulableTriggerInputTypes.DATE) {
+        ms = new Date(trigger.date).getTime();
+      }
+      
+      if (ms != null && (best === null || ms < best)) best = ms;
+    }
+    return best;
+  }
   let best: number | null = null;
   for (const trigger of triggers) {
     try {
@@ -56,7 +80,7 @@ export async function getEarliestNextTriggerMsForAlarm(alarm: Alarm): Promise<nu
 
 /** User-facing line for the alarm list */
 export async function formatNextAlarmRingSummary(alarm: Alarm): Promise<string> {
-  if (Platform.OS === 'web') return 'Phone build only — scheduling not on web.';
+  if (Platform.OS === 'web') return 'Web build — simulated scheduling enabled.';
   if (!alarm.isActive) return 'Alarm is off.';
   const triggers = triggersFor(alarm);
   if (triggers.length === 0) return 'Invalid time.';
@@ -230,9 +254,17 @@ export async function ensureNotificationPermissions(): Promise<boolean> {
   return next.granted;
 }
 
+let webTimeouts: Record<string, any> = {};
+
 /** Cancel scheduled local notifications tied to `alarmId` (by payload). */
 export async function cancelAlarm(alarmId: string): Promise<void> {
-  if (Platform.OS === 'web') return;
+  if (Platform.OS === 'web') {
+    if (webTimeouts[alarmId]) {
+      clearTimeout(webTimeouts[alarmId]);
+      delete webTimeouts[alarmId];
+    }
+    return;
+  }
   ensureForegroundHandler();
 
   const scheduled = await getAllScheduledNotificationsAsync();
@@ -247,7 +279,22 @@ export async function cancelAlarm(alarmId: string): Promise<void> {
 }
 
 export async function scheduleAlarm(alarm: Alarm): Promise<ScheduleAlarmResult> {
-  if (Platform.OS === 'web') return { ok: false, reason: 'web' };
+  if (Platform.OS === 'web') {
+    await cancelAlarm(alarm.id);
+    if (!alarm.isActive) return { ok: true };
+
+    const ms = await getEarliestNextTriggerMsForAlarm(alarm);
+    if (ms === null) return { ok: false, reason: 'no_triggers' };
+
+    const delay = ms - Date.now();
+    if (delay > 0) {
+      webTimeouts[alarm.id] = setTimeout(() => {
+        alert(`Drowzi Alarm: ${alarm.time}\nTap OK to complete your habit.`);
+        window.location.assign(`/habit-gate/${alarm.id}`);
+      }, delay);
+    }
+    return { ok: true };
+  }
 
   ensureForegroundHandler();
   await ensureAndroidAlarmChannel();

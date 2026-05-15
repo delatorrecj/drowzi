@@ -53,11 +53,46 @@ function MoveNetModelStatus() {
   );
 }
 
+function WebCamera({ active }: { active: boolean }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !active) return;
+    let stream: MediaStream | null = null;
+    void (async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        if (videoRef.current) videoRef.current.srcObject = stream;
+      } catch (e) {
+        console.warn('[WebCamera] failed to get stream', e);
+      }
+    })();
+    return () => {
+      stream?.getTracks().forEach((t) => t.stop());
+    };
+  }, [active]);
+
+  if (Platform.OS !== 'web') return null;
+
+  return (
+    <View style={styles.cameraBox}>
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      />
+    </View>
+  );
+}
+
 export function PosePushupGate({ alarm, onVerified }: HabitGateProps) {
   const repTarget =
     'repTarget' in alarm.habitConfig ? alarm.habitConfig.repTarget : 10;
 
   const { hasPermission, requestPermission } = useCameraPermission();
+  const [webPermission, setWebPermission] = useState<boolean | null>(null);
   const [cameraActive, setCameraActive] = useState(true);
   const [reps, setReps] = useState(0);
   const [done, setDone] = useState(false);
@@ -69,6 +104,21 @@ export function PosePushupGate({ alarm, onVerified }: HabitGateProps) {
       bentMaxDeg: BENT_MAX,
     }),
   );
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      void (async () => {
+        try {
+          const res = await navigator.permissions.query({ name: 'camera' as any });
+          setWebPermission(res.state === 'granted');
+          res.onchange = () => setWebPermission(res.state === 'granted');
+        } catch {
+          // Fallback for browsers that don't support permission query
+          setWebPermission(true);
+        }
+      })();
+    }
+  }, []);
 
   useEffect(() => {
     machineRef.current = createPushUpRepMachine({
@@ -91,7 +141,7 @@ export function PosePushupGate({ alarm, onVerified }: HabitGateProps) {
   }, [alarm.habitType, alarm.id, repTarget]);
 
   useEffect(() => {
-    if (!hasPermission) void requestPermission();
+    if (Platform.OS !== 'web' && !hasPermission) void requestPermission();
   }, [hasPermission, requestPermission]);
 
   const feedAngle = useCallback(
@@ -129,11 +179,12 @@ export function PosePushupGate({ alarm, onVerified }: HabitGateProps) {
 
   const simulateOneRep = useCallback(() => {
     feedAngle(170);
-    feedAngle(75);
-    feedAngle(165);
+    setTimeout(() => feedAngle(75), 100);
+    setTimeout(() => feedAngle(165), 200);
   }, [feedAngle]);
 
-  const showCamera = Platform.OS !== 'web' && hasPermission && cameraActive && !done;
+  const showCamera = hasPermission && cameraActive && !done;
+  const showWebCamera = Platform.OS === 'web' && cameraActive && !done;
 
   const title = useMemo(
     () =>
@@ -151,28 +202,33 @@ export function PosePushupGate({ alarm, onVerified }: HabitGateProps) {
 
       {Platform.OS === 'web' ? (
         <Text style={styles.hint}>
-          Camera verification runs on iOS/Android dev builds, not in the browser.
-          Use the buttons below to exercise the rep counter.
+          ML verification is active on mobile. On web, use the simulation button
+          below to silence the alarm.
         </Text>
       ) : null}
 
-      {!hasPermission ? (
+      {Platform.OS !== 'web' && !hasPermission ? (
         <Text style={styles.hint}>Grant camera permission to preview the pose gate.</Text>
       ) : null}
 
-      {showCamera ? (
-        <View style={styles.cameraBox}>
-          <Camera
-            style={StyleSheet.absoluteFill}
-            device="front"
-            isActive={showCamera}
-          />
-        </View>
-      ) : null}
+      {Platform.OS === 'web' ? (
+        <WebCamera active={showWebCamera} />
+      ) : (
+        showCamera && (
+          <View style={styles.cameraBox}>
+            <Camera
+              style={StyleSheet.absoluteFill}
+              device="front"
+              isActive={showCamera}
+            />
+          </View>
+        )
+      )}
 
       <Text style={styles.sub}>
-        Next: feed resized RGB frames into MoveNet, then parseMovenetOutputToLeftArm →
-        feedLandmarks (see poseFrameBridge.ts).
+        {Platform.OS === 'web' 
+          ? 'Web version is for local testing and demonstration.' 
+          : 'Next: feed resized RGB frames into MoveNet, then parseMovenetOutputToLeftArm → feedLandmarks.'}
       </Text>
 
       <Pressable style={styles.demo} onPress={simulateOneRep} disabled={done}>

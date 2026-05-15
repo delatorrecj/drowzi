@@ -1,4 +1,15 @@
+import Image from "next/image";
 import { COPY } from "@/lib/constants";
+
+const MASCOT_EVOLUTION = [
+  "/images/mascot/mascot-thinking.png",
+  "/images/mascot/mascot-surprised.png",
+  "/images/mascot/mascot-idle.png",
+  "/images/mascot/mascot-thinking-2.png",
+  "/images/mascot/Gemini_Generated_Image_hx0oyxhx0oyxhx0o.png",
+] as const;
+
+const MASCOT_SIZES = ["40px", "48px", "56px", "64px", "80px"] as const;
 
 export default function MascotSection() {
   return (
@@ -34,15 +45,20 @@ export default function MascotSection() {
               const opacities = ["opacity-40", "opacity-55", "opacity-70", "opacity-85", "opacity-100"];
               return (
                 <div key={s.label} className="flex flex-col items-center gap-2 flex-1">
-                  {/* Mascot placeholder — swap with pixel-art sprite */}
                   <div
-                    className={`${sizes[i]} ${opacities[i]} rounded-xl flex items-center justify-center text-2xl`}
+                    className={`relative ${sizes[i]} ${opacities[i]} rounded-xl overflow-hidden`}
                     style={{
                       backgroundColor: "#2E1F0A",
                       border: "1px solid #4A3015",
                     }}
                   >
-                    {i === 4 ? "⚡" : i === 3 ? "💪" : i === 2 ? "👁️" : i === 1 ? "😤" : "😴"}
+                    <Image
+                      src={MASCOT_EVOLUTION[i]}
+                      alt={`Drowzi mascot — ${s.state}`}
+                      fill
+                      sizes={MASCOT_SIZES[i]}
+                      className="object-contain p-0.5"
+                    />
                   </div>
                   <p
                     className="font-display font-bold text-xs text-center"

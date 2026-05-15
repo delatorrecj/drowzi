@@ -17,7 +17,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Drowzi — The alarm that won't stop until you do.",
+  title: "Drowzi",
   description:
     "Drowzi is the habit-gated alarm app that uses your phone's camera, mic, and sensors to verify your morning routine. Not a puzzle. The habit is the off-switch.",
   openGraph: {

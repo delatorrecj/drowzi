@@ -1,4 +1,4 @@
-import Image from "next/image";
+import PhoneMockup from "@/components/PhoneMockup";
 import { COPY, SITE } from "@/lib/constants";
 
 export default function HeroSection() {
@@ -33,7 +33,7 @@ export default function HeroSection() {
           <div className="flex flex-col sm:flex-row gap-4 mt-2">
             <a
               href={SITE.appStoreUrl}
-              className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl font-display font-bold text-sm transition-colors"
+              className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl font-display font-bold text-sm transition-colors hover:border-[#F4C430]/50"
               style={{ backgroundColor: "#2E1F0A", color: "#F5E6C8", border: "1px solid #4A3015" }}
             >
               <AppleIcon />
@@ -41,7 +41,7 @@ export default function HeroSection() {
             </a>
             <a
               href={SITE.playStoreUrl}
-              className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl font-display font-bold text-sm transition-colors"
+              className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl font-display font-bold text-sm transition-colors hover:border-[#F4C430]/50"
               style={{ backgroundColor: "#2E1F0A", color: "#F5E6C8", border: "1px solid #4A3015" }}
             >
               <GooglePlayIcon />
@@ -56,35 +56,15 @@ export default function HeroSection() {
 
         {/* Phone mockup */}
         <div className="flex justify-center animate-float">
-          <div
-            className="w-64 h-[520px] rounded-[2.5rem] flex items-center justify-center text-center p-6"
-            style={{
-              backgroundColor: "#F4C430",
-              boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
-            }}
-          >
-            {/* Placeholder — replace with real phone-hero.png */}
-            <div className="flex flex-col items-center gap-4">
-              <span className="text-7xl">⏰</span>
-              <p
-                className="font-display font-extrabold text-4xl leading-none"
-                style={{ color: "#654321" }}
-              >
-                6:30
-              </p>
-              <p
-                className="font-display font-bold text-sm"
-                style={{ color: "#654321" }}
-              >
-                DO YOUR PUSH-UPS
-              </p>
-              <div
-                className="mt-4 w-full py-3 rounded-xl font-display font-bold text-sm"
-                style={{ backgroundColor: "#E63946", color: "#fff" }}
-              >
-                ALARM ACTIVE
-              </div>
-            </div>
+          <div className="relative">
+            <div
+              className="absolute -inset-6 rounded-[4rem] opacity-40 blur-2xl pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse at center, #F4C430 0%, transparent 70%)",
+              }}
+            />
+            <PhoneMockup variant="hero" size="lg" className="relative" />
           </div>
         </div>
       </div>

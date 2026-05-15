@@ -1,3 +1,4 @@
+import { SiteIcon } from "@/components/SiteIcons";
 import { COPY } from "@/lib/constants";
 
 export default function ProblemSection() {
@@ -46,7 +47,12 @@ export default function ProblemSection() {
                 borderLeftWidth: "4px",
               }}
             >
-              <span className="text-3xl">{f.icon}</span>
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-[#E63946]"
+                style={{ backgroundColor: "rgba(230, 57, 70, 0.12)" }}
+              >
+                <SiteIcon name={f.icon} className="w-6 h-6" stroke="#E63946" />
+              </div>
               <p
                 className="font-display font-bold text-base"
                 style={{ color: "#F5E6C8" }}

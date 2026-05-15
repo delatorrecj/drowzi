@@ -1,0 +1,15 @@
+{
+  "name": "drowzi-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd apps/mobile && npm install && cd ../../website && npm install",
+    "dev:mobile": "cd apps/mobile && npm run web",
+    "dev:web": "cd website && npm run dev",
+    "dev": "concurrently \"npm run dev:mobile\" \"npm run dev:web\"",
+    "typecheck": "cd apps/mobile && npm run typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

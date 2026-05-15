@@ -11,17 +11,7 @@ export default function Navbar() {
       </span>
       <a
         href="#download"
-        className="px-5 py-2 rounded-xl font-display font-bold text-sm transition-colors"
-        style={{
-          backgroundColor: "#F4C430",
-          color: "#654321",
-        }}
-        onMouseOver={(e) =>
-          (e.currentTarget.style.backgroundColor = "#D9AC1E")
-        }
-        onMouseOut={(e) =>
-          (e.currentTarget.style.backgroundColor = "#F4C430")
-        }
+        className="px-5 py-2 rounded-xl font-display font-bold text-sm transition-colors bg-[#F4C430] text-[#654321] hover:bg-[#D9AC1E]"
       >
         {COPY.nav.cta}
       </a>
