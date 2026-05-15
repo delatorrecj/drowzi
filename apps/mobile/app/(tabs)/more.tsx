@@ -1,13 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { palette } from '@/src/shared/theme';
+import { dashboardTheme } from '@/src/shared/dashboardTheme';
 
 export default function MoreScreen() {
   return (
     <View style={styles.screen}>
       <Text style={styles.title}>Developer split</Text>
       <Text style={styles.body}>
-        Platform & data: apps/mobile/src/platform — notifications, persistence, sync hooks.
+        Platform & data: apps/mobile/src/platform — notifications, local persistence (AsyncStorage on device and
+        web).
       </Text>
       <Text style={styles.body}>
         Product & gates: apps/mobile/src/features/habits — replace stubs with real sensors / ML Kit.
@@ -21,17 +22,17 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     padding: 20,
-    backgroundColor: palette.surfaceLight,
+    backgroundColor: dashboardTheme.bg,
     gap: 12,
   },
   title: {
     fontSize: 22,
     fontWeight: '900',
-    color: palette.groundedBrown,
+    color: dashboardTheme.text,
   },
   body: {
     fontSize: 15,
     lineHeight: 24,
-    color: palette.groundedBrown,
+    color: dashboardTheme.textMuted,
   },
 });

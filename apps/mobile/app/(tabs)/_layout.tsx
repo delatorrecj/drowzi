@@ -3,32 +3,37 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Link, Tabs } from 'expo-router';
 import { Pressable } from 'react-native';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
+import { dashboardTheme } from '@/src/shared/dashboardTheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <FontAwesome size={26} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        tabBarInactiveTintColor: Colors[colorScheme ?? 'light'].tabIconDefault,
+        tabBarActiveTintColor: dashboardTheme.primary,
+        tabBarInactiveTintColor: dashboardTheme.textMuted,
+        tabBarStyle: {
+          backgroundColor: dashboardTheme.bg,
+          borderTopColor: dashboardTheme.border,
+        },
         headerShown: useClientOnlyValue(false, true),
+        headerStyle: { backgroundColor: dashboardTheme.bg },
+        headerTintColor: dashboardTheme.text,
+        headerTitleStyle: { fontWeight: '800' },
+        headerShadowVisible: false,
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <TabBarIcon name="bell" color={color} />,
+          title: 'Dashboard',
+          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           headerRight: () => (
             <Link href="/modal" asChild>
               <Pressable style={{ marginRight: 16 }}>
@@ -36,7 +41,7 @@ export default function TabLayout() {
                   <FontAwesome
                     name="info-circle"
                     size={22}
-                    color={Colors[colorScheme ?? 'light'].text}
+                    color={dashboardTheme.text}
                     style={{ opacity: pressed ? 0.5 : 1 }}
                   />
                 )}
