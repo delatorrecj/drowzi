@@ -14,7 +14,7 @@ Pin changes during the hackathon; extend types in `src/shared/types.ts`.
 ## APIs
 
 - **Alarms:** `getAlarms`, `getAlarmById`, `saveAlarm` — `src/platform/alarmStore.ts`
-- **Scheduler stubs:** `scheduleAlarm` / `cancelAlarm` — `src/platform/alarmScheduler.ts`
+- **Scheduler:** `scheduleAlarm` / `cancelAlarm` — `src/platform/alarmScheduler.ts` (expo-notifications: daily / weekdays / weekly / once). Default Android channel `drowzi-alarm-v1` (alarm-style audio attributes + sound on the payload). Tapping the notification opens `/habit-gate/:alarmId`.
 - **Completion:** `recordHabitCompletion` — `src/platform/recordCompletion.ts`
 - **Gate UI registry:** `habitGateRegistry` — `src/features/habits/registry.ts`
 
@@ -30,6 +30,6 @@ First launch hits `/` (`app/index.tsx`) → redirects to `/onboarding` until onb
 
 **Add more alarms:** `app/add-alarm.tsx` — motion-only single screen, then `router.back()`.
 
-**Resume onboarding shortcut:** `/onboarding?resumeStep=1` opens the name step; `resumeStep=2` opens alarm details.
+**Resume onboarding shortcut:** `/onboarding?resumeStep=1` opens the name step; `resumeStep=2` opens alarm details. If those params are omitted, the app restores the last in-progress step (`onboarding_resume_screen` in AsyncStorage) after the user taps Next at least once.
 
 **Skip:** sets AsyncStorage skip flags → Home fires a **one-time** alert; use **`/add-alarm`** or **`/onboarding`** to finish setup.

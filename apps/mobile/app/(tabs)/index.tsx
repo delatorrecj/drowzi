@@ -15,7 +15,7 @@ import type { Alarm } from '@/src/shared/types';
 import { palette } from '@/src/shared/theme';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
 import { DashboardMascotPlaceholder } from '@/src/features/dashboard/DashboardMascotPlaceholder';
-import { getAlarms } from '@/src/platform/alarmStore';
+import { deleteAlarm, getAlarms } from '@/src/platform/alarmStore';
 import {
   getConsecutiveDayStreak,
   getRecentCompletions,
@@ -194,6 +194,32 @@ export default function DashboardScreen() {
         </View>
       </View>
       <Text style={styles.meta}>{item.recurrence.type} · tap Simulate to test gate</Text>
+      <Text style={styles.manageHint}>Edit time & reps, or remove this alarm.</Text>
+      <View style={styles.cardActions}>
+        <Pressable
+          style={styles.editAction}
+          accessibilityRole="button"
+          accessibilityLabel={`Edit alarm ${item.time}`}
+          onPress={() => router.push({ pathname: '/add-alarm', params: { id: item.id } })}>
+          <Text style={styles.editActionLabel}>Edit alarm</Text>
+        </Pressable>
+        <Pressable
+          style={styles.deleteAction}
+          accessibilityRole="button"
+          accessibilityLabel={`Delete alarm ${item.time}`}
+          onPress={() =>
+            Alert.alert('Delete alarm', `Remove the ${item.time} alarm?`, [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: () => void deleteAlarm(item.id).then(() => refresh()),
+              },
+            ])
+          }>
+          <Text style={styles.deleteActionLabel}>Delete</Text>
+        </Pressable>
+      </View>
       <Pressable style={styles.simulate} onPress={() => router.push(`/habit-gate/${item.id}`)}>
         <Text style={styles.simulateLabel}>Simulate alarm</Text>
       </Pressable>
@@ -424,6 +450,53 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: dashboardTheme.textMuted,
     textTransform: 'capitalize',
+  },
+  manageHint: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: dashboardTheme.text,
+    opacity: 0.9,
+    marginTop: 2,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    gap: 10,
+    marginTop: 10,
+  },
+  editAction: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(244, 196, 48, 0.14)',
+    borderWidth: 2,
+    borderColor: dashboardTheme.primary,
+  },
+  editActionLabel: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: dashboardTheme.primary,
+  },
+  deleteAction: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(230, 57, 70, 0.12)',
+    borderWidth: 2,
+    borderColor: dashboardTheme.alarmAccent,
+  },
+  deleteActionLabel: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: dashboardTheme.alarmAccent,
   },
   simulate: {
     marginTop: 4,
