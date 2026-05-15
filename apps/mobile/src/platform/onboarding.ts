@@ -46,6 +46,22 @@ export async function setDisplayName(name: string): Promise<void> {
   await AsyncStorage.setItem(storageKeys.displayName, trimmed);
 }
 
+/** Restores name (1) or alarm (2) step when returning via `/onboarding` without query params. */
+export async function getSavedOnboardingScreen(): Promise<1 | 2 | null> {
+  const v = await AsyncStorage.getItem(storageKeys.onboardingResumeScreen);
+  if (v === '1') return 1;
+  if (v === '2') return 2;
+  return null;
+}
+
+export async function setSavedOnboardingScreen(screen: 1 | 2): Promise<void> {
+  await AsyncStorage.setItem(storageKeys.onboardingResumeScreen, String(screen));
+}
+
+export async function clearSavedOnboardingScreen(): Promise<void> {
+  await AsyncStorage.removeItem(storageKeys.onboardingResumeScreen);
+}
+
 /** Dev / QA — wipe onboarding + skip reminder flags (does not delete alarms). */
 export async function resetOnboardingFlagsDev(): Promise<void> {
   await AsyncStorage.multiRemove([
@@ -53,5 +69,6 @@ export async function resetOnboardingFlagsDev(): Promise<void> {
     storageKeys.alarmSetupSkipped,
     storageKeys.setupReminderShown,
     storageKeys.displayName,
+    storageKeys.onboardingResumeScreen,
   ]);
 }

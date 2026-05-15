@@ -39,3 +39,9 @@ export async function saveAlarm(alarm: Alarm): Promise<void> {
   await cancelAlarm(alarm.id);
   if (alarm.isActive) await scheduleAlarm(alarm);
 }
+
+export async function deleteAlarm(id: string): Promise<void> {
+  const alarms = await readRaw();
+  await writeRaw(alarms.filter((a) => a.id !== id));
+  await cancelAlarm(id);
+}

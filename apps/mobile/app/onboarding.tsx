@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -20,15 +20,21 @@ import {
 import { alarmSetupScreenOptions, alarmSetupStyles as styles } from '@/src/features/alarm/alarmSetupStyles';
 import {
   clearAlarmSetupSkipFlags,
+  clearSavedOnboardingScreen,
+  getSavedOnboardingScreen,
   setAlarmSetupSkipped,
   setDisplayName,
   setOnboardingComplete,
+  setSavedOnboardingScreen,
 } from '@/src/platform/onboarding';
 import { saveAlarm } from '@/src/platform/alarmStore';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
 
 export default function OnboardingScreen() {
   const { resumeStep } = useLocalSearchParams<{ resumeStep?: string }>();
+
+  /** Prevents late AsyncStorage restore from overwriting after the user taps Next/Back. */
+  const ignoreLateRestoreRef = useRef(false);
 
   const [step, setStep] = useState(0);
   const [nameInput, setNameInput] = useState('');
@@ -38,6 +44,7 @@ export default function OnboardingScreen() {
   const selectedCategory = PHYSICAL_SETUP_CATEGORY;
 
   async function finishOnboardingSkip() {
+    await clearSavedOnboardingScreen();
     await setDisplayName(nameInput);
     await setAlarmSetupSkipped(true);
     await setOnboardingComplete(true);
@@ -45,9 +52,44 @@ export default function OnboardingScreen() {
   }
 
   useEffect(() => {
-    if (resumeStep === '1') setStep(1);
-    if (resumeStep === '2') setStep(2);
+    let cancelled = false;
+    void (async () => {
+      if (resumeStep === '1') {
+        if (!cancelled) setStep(1);
+        return;
+      }
+      if (resumeStep === '2') {
+        if (!cancelled) setStep(2);
+        return;
+      }
+      const saved = await getSavedOnboardingScreen();
+      if (cancelled || ignoreLateRestoreRef.current) return;
+      if (saved !== null) setStep(saved);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [resumeStep]);
+
+  function goBackStep() {
+    ignoreLateRestoreRef.current = true;
+    const prev = step - 1;
+    setStep(prev);
+    if (prev === 0) void clearSavedOnboardingScreen();
+    else void setSavedOnboardingScreen(prev as 1 | 2);
+  }
+
+  function goForwardFromWelcome() {
+    ignoreLateRestoreRef.current = true;
+    setStep(1);
+    void setSavedOnboardingScreen(1);
+  }
+
+  function goForwardFromName() {
+    ignoreLateRestoreRef.current = true;
+    setStep(2);
+    void setSavedOnboardingScreen(2);
+  }
 
   const habitConfig = useMemo(
     () => buildHabitConfigFromInputs(selectedCategory.habitType, repInput, '', ''),
@@ -74,6 +116,7 @@ export default function OnboardingScreen() {
 
     await saveAlarm(alarm);
     await clearAlarmSetupSkipFlags();
+    await clearSavedOnboardingScreen();
     await setDisplayName(nameInput);
     await setOnboardingComplete(true);
     router.replace('/(tabs)');
@@ -156,17 +199,17 @@ export default function OnboardingScreen() {
 
           <View style={styles.footer}>
             {step > 0 ? (
-              <Pressable style={styles.secondary} onPress={() => setStep(step - 1)}>
+              <Pressable style={styles.secondary} onPress={goBackStep}>
                 <Text style={styles.secondaryLabel}>Back</Text>
               </Pressable>
             ) : null}
 
             {step === 0 ? (
-              <Pressable style={styles.primary} onPress={() => setStep(1)}>
+              <Pressable style={styles.primary} onPress={goForwardFromWelcome}>
                 <Text style={styles.primaryLabel}>Next</Text>
               </Pressable>
             ) : step === 1 ? (
-              <Pressable style={styles.primary} onPress={() => setStep(2)}>
+              <Pressable style={styles.primary} onPress={goForwardFromName}>
                 <Text style={styles.primaryLabel}>Next</Text>
               </Pressable>
             ) : (
