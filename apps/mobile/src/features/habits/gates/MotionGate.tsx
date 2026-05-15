@@ -1,10 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native';
+﻿import { StyleSheet, Text, View } from 'react-native';
 
 import type { HabitGateProps } from '@/src/features/habits/gates/types';
+import { PosePushupGate } from '@/src/features/habits/gates/PosePushupGate';
 import { fonts } from '@/src/shared/theme';
-import { PlaceholderGate } from '@/src/features/habits/gates/PlaceholderGate';
 
-/** Accelerometer / pose counting lands here — see docs/rfc-drowzi-habit-verification.md */
+/** Push-up verification: MoveNet + selfie camera + rep counter */
 export function MotionGate(props: HabitGateProps) {
   const cfg = props.alarm.habitConfig;
   const reps =
@@ -13,7 +13,7 @@ export function MotionGate(props: HabitGateProps) {
   return (
     <View style={styles.wrap}>
       <Text style={styles.copy}>Complete {Number.isFinite(reps) ? reps : '…'} reps to silence the alarm.</Text>
-      <PlaceholderGate {...props} />
+      <PosePushupGate {...props} />
     </View>
   );
 }
