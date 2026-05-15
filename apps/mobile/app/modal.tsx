@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { Platform, ScrollView, StyleSheet, Text } from 'react-native';
 
-import { palette } from '@/src/shared/theme';
+import { fonts, palette } from '@/src/shared/theme';
 
 export default function ModalScreen() {
   return (
@@ -28,12 +28,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: '900',
+    fontFamily: fonts.headlineExtraBold,
     color: palette.groundedBrown,
   },
   body: {
     fontSize: 15,
     lineHeight: 24,
+    fontFamily: fonts.body,
     color: palette.groundedBrown,
   },
 });
