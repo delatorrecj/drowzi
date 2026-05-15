@@ -1,0 +1,19 @@
+# FMD is a separate git repository (template library)
+FMD/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.expo/
+
+# OS
+.DS_Store
+Thumbs.db
