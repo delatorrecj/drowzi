@@ -21,30 +21,32 @@ import { alarmSetupScreenOptions, alarmSetupStyles as styles } from '@/src/featu
 import {
   clearAlarmSetupSkipFlags,
   setAlarmSetupSkipped,
+  setDisplayName,
   setOnboardingComplete,
 } from '@/src/platform/onboarding';
 import { saveAlarm } from '@/src/platform/alarmStore';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
 
-function finishOnboardingSkip() {
-  void setAlarmSetupSkipped(true);
-  void setOnboardingComplete(true);
-  router.replace('/(tabs)');
-}
-
 export default function OnboardingScreen() {
   const { resumeStep } = useLocalSearchParams<{ resumeStep?: string }>();
 
   const [step, setStep] = useState(0);
+  const [nameInput, setNameInput] = useState('');
   const [timeInput, setTimeInput] = useState('06:30');
   const [repInput, setRepInput] = useState('10');
 
   const selectedCategory = PHYSICAL_SETUP_CATEGORY;
 
+  async function finishOnboardingSkip() {
+    await setDisplayName(nameInput);
+    await setAlarmSetupSkipped(true);
+    await setOnboardingComplete(true);
+    router.replace('/(tabs)');
+  }
+
   useEffect(() => {
-    if (resumeStep === '1' || resumeStep === '2') {
-      setStep(1);
-    }
+    if (resumeStep === '1') setStep(1);
+    if (resumeStep === '2') setStep(2);
   }, [resumeStep]);
 
   const habitConfig = useMemo(
@@ -72,11 +74,13 @@ export default function OnboardingScreen() {
 
     await saveAlarm(alarm);
     await clearAlarmSetupSkipFlags();
+    await setDisplayName(nameInput);
     await setOnboardingComplete(true);
     router.replace('/(tabs)');
   }
 
-  const headerTitle = step === 0 ? 'Welcome' : 'Alarm & reps';
+  const headerTitle =
+    step === 0 ? 'Welcome' : step === 1 ? 'Your name' : 'Alarm & reps';
 
   return (
     <SafeAreaView style={styles.flex} edges={['bottom']}>
@@ -101,11 +105,30 @@ export default function OnboardingScreen() {
                 For now your alarm is gated by one thing only: a physical habit — reps counted by motion so you
                 actually get out of sleep inertia. More habit types come later.
               </Text>
-              <Text style={styles.bodyMuted}>Two quick steps. Under two minutes.</Text>
+              <Text style={styles.bodyMuted}>Three quick steps. Under two minutes.</Text>
+            </View>
+          ) : step === 1 ? (
+            <View style={styles.block}>
+              <Text style={styles.kicker}>Step 2 of 3</Text>
+              <Text style={styles.title}>What should we call you?</Text>
+              <Text style={styles.lede}>We&apos;ll use this to greet you on your dashboard.</Text>
+
+              <Text style={styles.label}>Your name</Text>
+              <TextInput
+                value={nameInput}
+                onChangeText={setNameInput}
+                placeholder="Alex"
+                placeholderTextColor={dashboardTheme.placeholderMuted}
+                style={styles.input}
+                autoCapitalize="words"
+                autoCorrect={false}
+                maxLength={48}
+                accessibilityLabel="Your display name"
+              />
             </View>
           ) : (
             <View style={styles.block}>
-              <Text style={styles.kicker}>Step 2 of 2</Text>
+              <Text style={styles.kicker}>Step 3 of 3</Text>
               <Text style={styles.title}>When & how many reps</Text>
               <Text style={styles.lede}>Motion-only · {selectedCategory.subtitle}</Text>
 
@@ -133,7 +156,7 @@ export default function OnboardingScreen() {
 
           <View style={styles.footer}>
             {step > 0 ? (
-              <Pressable style={styles.secondary} onPress={() => setStep(0)}>
+              <Pressable style={styles.secondary} onPress={() => setStep(step - 1)}>
                 <Text style={styles.secondaryLabel}>Back</Text>
               </Pressable>
             ) : null}
@@ -142,13 +165,17 @@ export default function OnboardingScreen() {
               <Pressable style={styles.primary} onPress={() => setStep(1)}>
                 <Text style={styles.primaryLabel}>Next</Text>
               </Pressable>
+            ) : step === 1 ? (
+              <Pressable style={styles.primary} onPress={() => setStep(2)}>
+                <Text style={styles.primaryLabel}>Next</Text>
+              </Pressable>
             ) : (
               <Pressable style={styles.primary} onPress={() => void handleFinish()}>
                 <Text style={styles.primaryLabel}>Save first alarm</Text>
               </Pressable>
             )}
 
-            <Pressable style={styles.ghost} onPress={finishOnboardingSkip}>
+            <Pressable style={styles.ghost} onPress={() => void finishOnboardingSkip()}>
               <Text style={styles.ghostLabel}>Skip for now</Text>
             </Pressable>
           </View>

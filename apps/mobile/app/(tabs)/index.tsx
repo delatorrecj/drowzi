@@ -21,6 +21,7 @@ import {
   getRecentCompletions,
 } from '@/src/platform/recordCompletion';
 import {
+  getDisplayName,
   isOnboardingComplete,
   markSetupReminderShown,
   resetOnboardingFlagsDev,
@@ -52,18 +53,21 @@ export default function DashboardScreen() {
   const [recentCount, setRecentCount] = useState(0);
   const [streak, setStreak] = useState(0);
   const [onboarded, setOnboarded] = useState(true);
+  const [displayName, setDisplayName] = useState('');
 
   const refresh = useCallback(async () => {
-    const [list, recent, done, streakDays] = await Promise.all([
+    const [list, recent, done, streakDays, name] = await Promise.all([
       getAlarms(),
       getRecentCompletions(7),
       isOnboardingComplete(),
       getConsecutiveDayStreak(),
+      getDisplayName(),
     ]);
     setAlarms(list);
     setRecentCount(recent.length);
     setOnboarded(done);
     setStreak(streakDays);
+    setDisplayName(name);
   }, []);
 
   useFocusEffect(
@@ -115,7 +119,14 @@ export default function DashboardScreen() {
         </View>
       ) : null}
 
-      <Text style={styles.greeting}>Morning accountability</Text>
+      {displayName ? (
+        <>
+          <Text style={styles.greetingPersonal}>Morning, {displayName}</Text>
+          <Text style={styles.greetingSub}>Your accountability hub</Text>
+        </>
+      ) : (
+        <Text style={styles.greeting}>Morning accountability</Text>
+      )}
 
       <View style={styles.heroRow}>
         <DashboardMascotPlaceholder mood={mascotMood} />
@@ -264,6 +275,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: dashboardTheme.textMuted,
     letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  greetingPersonal: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: dashboardTheme.text,
+    letterSpacing: -0.3,
+  },
+  greetingSub: {
+    marginTop: 4,
+    fontSize: 13,
+    fontWeight: '700',
+    color: dashboardTheme.textMuted,
+    letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
   heroRow: {
