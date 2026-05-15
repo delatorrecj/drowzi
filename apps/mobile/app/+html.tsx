@@ -1,5 +1,7 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
 
+import { LG_MIN_WIDTH, palette } from '@/src/shared/theme';
+
 // This file is web-only and used to configure the root HTML for every
 // web page during static rendering.
 // The contents of this function only run in Node.js environments and
@@ -28,11 +30,35 @@ export default function Root({ children }: { children: React.ReactNode }) {
 }
 
 const responsiveBackground = `
+html, body {
+  height: 100%;
+  margin: 0;
+}
+body {
+  display: flex;
+  flex-direction: column;
+}
+#root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
 body {
   background-color: #fff;
 }
 @media (prefers-color-scheme: dark) {
   body {
     background-color: #000;
+  }
+}
+@media (min-width: ${LG_MIN_WIDTH}px) {
+  body {
+    background-color: ${palette.shellGutter};
+  }
+}
+@media (min-width: ${LG_MIN_WIDTH}px) and (prefers-color-scheme: dark) {
+  body {
+    background-color: ${palette.shellGutterDark};
   }
 }`;

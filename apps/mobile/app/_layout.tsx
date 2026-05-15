@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
+import { WebMobileShell } from '@/components/WebMobileShell';
 import { useColorScheme } from '@/components/useColorScheme';
 import { fonts, loadAppFonts } from '@/src/shared/theme';
 
@@ -62,13 +63,15 @@ function RootLayoutNav() {
   };
 
   return (
-    <ThemeProvider value={navigationTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ title: 'Welcome' }} />
-        <Stack.Screen name="habit-gate/[alarmId]" options={{ headerShown: false, animation: 'fade' }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <WebMobileShell>
+      <ThemeProvider value={navigationTheme}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ title: 'Welcome' }} />
+          <Stack.Screen name="habit-gate/[alarmId]" options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        </Stack>
+      </ThemeProvider>
+    </WebMobileShell>
   );
 }
