@@ -10,7 +10,7 @@ import {
 import { Link, router, useFocusEffect } from 'expo-router';
 
 import type { Alarm } from '@/src/shared/types';
-import { palette } from '@/src/shared/theme';
+import { fonts, palette } from '@/src/shared/theme';
 import { getAlarms } from '@/src/platform/alarmStore';
 import { getRecentCompletions } from '@/src/platform/recordCompletion';
 import { isOnboardingComplete, setOnboardingComplete } from '@/src/platform/onboarding';
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   },
   bannerTitle: {
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: fonts.headlineExtraBold,
     color: palette.groundedBrown,
   },
   bannerCta: {
@@ -135,16 +135,17 @@ const styles = StyleSheet.create({
   },
   bannerCtaLabel: {
     color: '#fff',
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   h1: {
     fontSize: 28,
-    fontWeight: '900',
+    fontFamily: fonts.headlineBlack,
     color: palette.groundedBrown,
   },
   lede: {
     fontSize: 15,
     lineHeight: 22,
+    fontFamily: fonts.body,
     color: palette.groundedBrown,
     opacity: 0.85,
   },
@@ -158,11 +159,12 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 32,
-    fontWeight: '900',
+    fontFamily: fonts.headlineBlack,
     color: palette.groundedBrown,
   },
   meta: {
     fontSize: 14,
+    fontFamily: fonts.body,
     color: palette.groundedBrown,
     opacity: 0.85,
     textTransform: 'capitalize',
@@ -176,11 +178,12 @@ const styles = StyleSheet.create({
     backgroundColor: palette.awakeningYellow,
   },
   simulateLabel: {
-    fontWeight: '800',
+    fontFamily: fonts.bodyBold,
     color: palette.groundedBrown,
   },
   stat: {
     fontSize: 14,
+    fontFamily: fonts.body,
     color: palette.groundedBrown,
   },
   reset: {
@@ -189,7 +192,7 @@ const styles = StyleSheet.create({
   },
   resetLabel: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     color: palette.groundedBrown,
     opacity: 0.6,
     textDecorationLine: 'underline',
