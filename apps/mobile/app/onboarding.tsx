@@ -1,3 +1,4 @@
+import { Video, ResizeMode } from 'expo-av';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
@@ -5,6 +6,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   View,
@@ -12,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 
+import { mascotAssets } from '@/assets/images/mascot';
 import {
   PHYSICAL_SETUP_CATEGORY,
   buildHabitConfigFromInputs,
@@ -31,8 +34,19 @@ import { saveAlarm } from '@/src/platform/alarmStore';
 import { notifyIfSchedulingFailed } from '@/src/platform/schedulingFeedback';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
 
+const onboardingStyles = StyleSheet.create({
+  video: {
+    width: '100%',
+    height: 200,
+    borderRadius: 20,
+    marginVertical: 16,
+    backgroundColor: dashboardTheme.surface,
+  },
+});
+
 export default function OnboardingScreen() {
   const { resumeStep } = useLocalSearchParams<{ resumeStep?: string }>();
+  // ... rest of the component
 
   /** Prevents late AsyncStorage restore from overwriting after the user taps Next/Back. */
   const ignoreLateRestoreRef = useRef(false);
@@ -145,6 +159,14 @@ export default function OnboardingScreen() {
           {step === 0 ? (
             <View style={styles.block}>
               <Text style={styles.kicker}>Meet Drowzi</Text>
+              <Video
+                source={mascotAssets.intro}
+                style={onboardingStyles.video}
+                resizeMode={ResizeMode.COVER}
+                shouldPlay
+                isLooping
+                isMuted
+              />
               <Text style={styles.hero}>Grogginess loses. Your habit wins.</Text>
               <Text style={styles.body}>
                 For now your alarm is gated by one thing only: a physical habit — reps counted by motion so you
