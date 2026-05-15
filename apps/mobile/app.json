@@ -14,7 +14,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Drowzi verifies morning habits using the camera (e.g. push-up pose)."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +25,9 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["android.permission.CAMERA"],
+      "package": "com.anonymous.drowzi"
     },
     "web": {
       "bundler": "metro",
@@ -30,7 +35,10 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-dev-client",
+      "expo-sqlite",
+      "react-native-fast-tflite"
     ],
     "experiments": {
       "typedRoutes": true
