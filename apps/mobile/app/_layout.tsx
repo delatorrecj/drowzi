@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { fonts, loadAppFonts } from '@/src/shared/theme';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -23,7 +24,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    ...loadAppFonts(),
     ...FontAwesome.font,
   });
 
@@ -45,11 +46,23 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
+const navigationFonts = {
+  regular: { fontFamily: fonts.body, fontWeight: '400' as const },
+  medium: { fontFamily: fonts.bodyMedium, fontWeight: '500' as const },
+  bold: { fontFamily: fonts.bodySemiBold, fontWeight: '600' as const },
+  heavy: { fontFamily: fonts.headlineExtraBold, fontWeight: '800' as const },
+};
+
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const base = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
+  const navigationTheme = {
+    ...base,
+    fonts: navigationFonts,
+  };
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={navigationTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ title: 'Welcome' }} />
