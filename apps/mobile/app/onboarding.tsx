@@ -28,6 +28,7 @@ import {
   setSavedOnboardingScreen,
 } from '@/src/platform/onboarding';
 import { saveAlarm } from '@/src/platform/alarmStore';
+import { notifyIfSchedulingFailed } from '@/src/platform/schedulingFeedback';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
 
 export default function OnboardingScreen() {
@@ -114,7 +115,8 @@ export default function OnboardingScreen() {
       createdAt: new Date().toISOString(),
     };
 
-    await saveAlarm(alarm);
+    const { scheduling } = await saveAlarm(alarm);
+    notifyIfSchedulingFailed(scheduling);
     await clearAlarmSetupSkipFlags();
     await clearSavedOnboardingScreen();
     await setDisplayName(nameInput);

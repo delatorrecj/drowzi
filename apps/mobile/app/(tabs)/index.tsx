@@ -2,8 +2,11 @@ import { useCallback, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Linking,
   ListRenderItem,
+  Platform,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -16,6 +19,10 @@ import { palette } from '@/src/shared/theme';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
 import { DashboardMascotPlaceholder } from '@/src/features/dashboard/DashboardMascotPlaceholder';
 import { deleteAlarm, getAlarms } from '@/src/platform/alarmStore';
+import {
+  formatNextAlarmRingSummary,
+  isNotificationPermissionGranted,
+} from '@/src/platform/alarmScheduler';
 import {
   getConsecutiveDayStreak,
   getRecentCompletions,
@@ -54,21 +61,43 @@ export default function DashboardScreen() {
   const [streak, setStreak] = useState(0);
   const [onboarded, setOnboarded] = useState(true);
   const [displayName, setDisplayName] = useState('');
+  const [nextRingById, setNextRingById] = useState<Record<string, string>>({});
+  const [notificationAllowed, setNotificationAllowed] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const refresh = useCallback(async () => {
-    const [list, recent, done, streakDays, name] = await Promise.all([
+    const [list, recent, done, streakDays, name, notifGranted] = await Promise.all([
       getAlarms(),
       getRecentCompletions(7),
       isOnboardingComplete(),
       getConsecutiveDayStreak(),
       getDisplayName(),
+      Platform.OS === 'web' ? Promise.resolve(true) : isNotificationPermissionGranted(),
     ]);
     setAlarms(list);
     setRecentCount(recent.length);
     setOnboarded(done);
     setStreak(streakDays);
     setDisplayName(name);
+    setNotificationAllowed(notifGranted);
+
+    if (Platform.OS === 'web') {
+      setNextRingById({});
+    } else {
+      const rings: Record<string, string> = {};
+      await Promise.all(
+        list.map(async (alarm) => {
+          rings[alarm.id] = await formatNextAlarmRingSummary(alarm);
+        }),
+      );
+      setNextRingById(rings);
+    }
   }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    void refresh().finally(() => setRefreshing(false));
+  }, [refresh]);
 
   useFocusEffect(
     useCallback(() => {
@@ -119,6 +148,18 @@ export default function DashboardScreen() {
         </View>
       ) : null}
 
+      {Platform.OS !== 'web' && !notificationAllowed ? (
+        <View style={[styles.banner, styles.warnBanner]}>
+          <Text style={styles.bannerTitle}>Notifications are off</Text>
+          <Text style={styles.bannerBody}>
+            Scheduled alarms cannot fire until the system allows Drowzi to notify you.
+          </Text>
+          <Pressable style={styles.bannerCta} onPress={() => void Linking.openSettings()}>
+            <Text style={styles.bannerCtaLabel}>Open system settings</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       {displayName ? (
         <>
           <Text style={styles.greetingPersonal}>Morning, {displayName}</Text>
@@ -153,8 +194,8 @@ export default function DashboardScreen() {
       </View>
 
       <Text style={styles.lede}>
-        New alarms are motion-only for now. Tap Simulate to open the habit gate. Everything stays on this device
-        (and in the browser build via local storage).
+        Alarms notify at the clock time below (daily = next occurrence; if today’s time already passed, the next ring
+        is usually tomorrow unless you tap Edit). Tap Simulate anytime to practise the gate. Not on web.
       </Text>
     </View>
   );
@@ -193,7 +234,8 @@ export default function DashboardScreen() {
           <Text style={styles.badgeLabel}>{habitLabel(item.habitType)}</Text>
         </View>
       </View>
-      <Text style={styles.meta}>{item.recurrence.type} · tap Simulate to test gate</Text>
+      <Text style={styles.nextRing}>{nextRingById[item.id] ?? '—'}</Text>
+      <Text style={styles.meta}>{item.recurrence.type} · tap Simulate to practise the gate now</Text>
       <Text style={styles.manageHint}>Edit time & reps, or remove this alarm.</Text>
       <View style={styles.cardActions}>
         <Pressable
@@ -238,6 +280,16 @@ export default function DashboardScreen() {
         ListFooterComponent={footer}
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         renderItem={renderItem}
+        refreshControl={
+          Platform.OS === 'web' ? undefined : (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={dashboardTheme.primary}
+              colors={[dashboardTheme.primary]}
+            />
+          )
+        }
       />
     </SafeAreaView>
   );
@@ -295,6 +347,10 @@ const styles = StyleSheet.create({
   bannerCtaLabel: {
     color: dashboardTheme.textOnPrimary,
     fontWeight: '800',
+  },
+  warnBanner: {
+    borderWidth: 1,
+    borderColor: dashboardTheme.alarmAccent,
   },
   greeting: {
     fontSize: 14,
@@ -445,6 +501,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: dashboardTheme.primary,
     textTransform: 'uppercase',
+  },
+  nextRing: {
+    marginTop: 6,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '800',
+    color: dashboardTheme.primary,
   },
   meta: {
     fontSize: 13,

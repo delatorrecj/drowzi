@@ -20,6 +20,7 @@ import {
 } from '@/src/features/alarm/alarmSetupShared';
 import { alarmSetupScreenOptions, alarmSetupStyles as styles } from '@/src/features/alarm/alarmSetupStyles';
 import { getAlarmById, saveAlarm } from '@/src/platform/alarmStore';
+import { notifyIfSchedulingFailed } from '@/src/platform/schedulingFeedback';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
 import type { Alarm } from '@/src/shared/types';
 
@@ -70,7 +71,7 @@ export default function AddAlarmScreen() {
       : editing.habitConfig;
     const habitType = useMotionFields ? selectedCategory.habitType : editing.habitType;
 
-    await saveAlarm({
+    const { scheduling } = await saveAlarm({
       id: editing?.id ?? `alarm-${Date.now()}`,
       userId: editing?.userId ?? 'local-user',
       time,
@@ -80,6 +81,7 @@ export default function AddAlarmScreen() {
       isActive: editing?.isActive ?? true,
       createdAt: editing?.createdAt ?? new Date().toISOString(),
     });
+    notifyIfSchedulingFailed(scheduling);
 
     router.back();
   }
