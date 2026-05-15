@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 
 import { setOnboardingComplete } from '@/src/platform/onboarding';
-import { palette } from '@/src/shared/theme';
+import { fonts, palette } from '@/src/shared/theme';
 
 const STEPS = [
   {
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   },
   kicker: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     color: palette.groundedBrown,
     opacity: 0.7,
     letterSpacing: 0.8,
@@ -85,13 +85,14 @@ const styles = StyleSheet.create({
   title: {
     marginTop: 12,
     fontSize: 34,
-    fontWeight: '900',
+    fontFamily: fonts.headlineBlack,
     color: palette.groundedBrown,
   },
   body: {
     marginTop: 16,
     fontSize: 17,
     lineHeight: 26,
+    fontFamily: fonts.body,
     color: palette.groundedBrown,
   },
   footer: {
@@ -107,7 +108,7 @@ const styles = StyleSheet.create({
   primaryLabel: {
     color: '#fff',
     fontSize: 17,
-    fontWeight: '800',
+    fontFamily: fonts.bodyBold,
   },
   ghost: {
     paddingVertical: 14,
@@ -116,6 +117,6 @@ const styles = StyleSheet.create({
   ghostLabel: {
     color: palette.groundedBrown,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 });

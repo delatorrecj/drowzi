@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { HabitGateProps } from '@/src/features/habits/gates/types';
+import { fonts } from '@/src/shared/theme';
 import { PlaceholderGate } from '@/src/features/habits/gates/PlaceholderGate';
 
 /** Accelerometer / pose counting lands here — see docs/rfc-drowzi-habit-verification.md */
@@ -21,7 +22,7 @@ const styles = StyleSheet.create({
   wrap: { gap: 16 },
   copy: {
     fontSize: 17,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     color: '#654321',
     textAlign: 'center',
   },
