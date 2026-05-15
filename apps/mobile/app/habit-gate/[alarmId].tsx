@@ -8,7 +8,7 @@ import { getAlarmById } from '@/src/platform/alarmStore';
 import { recordHabitCompletion } from '@/src/platform/recordCompletion';
 import { todayLocalDate } from '@/src/shared/date';
 import type { Alarm } from '@/src/shared/types';
-import { palette } from '@/src/shared/theme';
+import { fonts, palette } from '@/src/shared/theme';
 
 export default function HabitGateScreen() {
   const params = useLocalSearchParams<{ alarmId: string | string[] }>();
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   },
   pretitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     letterSpacing: 1,
     color: palette.groundedBrown,
     opacity: 0.85,
@@ -104,12 +104,13 @@ const styles = StyleSheet.create({
   title: {
     marginTop: 4,
     fontSize: 56,
-    fontWeight: '900',
+    fontFamily: fonts.headlineBlack,
     color: palette.groundedBrown,
   },
   sub: {
     marginTop: 4,
     fontSize: 16,
+    fontFamily: fonts.body,
     color: palette.groundedBrown,
     opacity: 0.9,
   },
@@ -119,6 +120,7 @@ const styles = StyleSheet.create({
   },
   error: {
     fontSize: 16,
+    fontFamily: fonts.body,
     color: palette.groundedBrown,
   },
 });

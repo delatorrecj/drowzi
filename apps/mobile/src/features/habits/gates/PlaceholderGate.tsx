@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { HabitGateProps } from '@/src/features/habits/gates/types';
+import { fonts } from '@/src/shared/theme';
 
 /** Fallback when a gate is not implemented yet (hackathon stub). */
 export function PlaceholderGate({ alarm, onVerified }: HabitGateProps) {
@@ -26,12 +27,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fonts.headlineBold,
     color: '#654321',
   },
   body: {
     fontSize: 15,
     lineHeight: 22,
+    fontFamily: fonts.body,
     color: '#654321',
   },
   cta: {
@@ -44,6 +46,6 @@ const styles = StyleSheet.create({
   ctaLabel: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
 });
