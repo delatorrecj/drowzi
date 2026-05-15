@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { HabitGateProps } from '@/src/features/habits/gates/types';
+import { usePushupAlarmLoop } from '@/src/features/habits/hooks/usePushupAlarmLoop';
 import { PushupWebCamera } from '@/src/features/habits/gates/PushupWebCamera';
 import { createPushUpRepMachine } from '@/src/features/pushup/pushUpRepStateMachine';
 import type { LeftArmChain } from '@/src/features/pushup/poseTypes';
@@ -19,6 +20,7 @@ export function PosePushupGate({ alarm, onVerified }: HabitGateProps) {
 
   const [reps, setReps] = useState(0);
   const [done, setDone] = useState(false);
+  usePushupAlarmLoop(!done);
   const doneRef = useRef(false);
   const machineRef = useRef(
     createPushUpRepMachine({
@@ -113,9 +115,8 @@ export function PosePushupGate({ alarm, onVerified }: HabitGateProps) {
     <View style={styles.wrap}>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.hint}>
-        Live preview uses your browser camera and MoveNet (like the native app). Allow camera access. Use HTTPS or
-        localhost. The Kaggle time-series exercise set is wearable sensor data—not used in the browser; counting is
-        from pose angles, not OpenCV.
+        Live preview: camera + MoveNet. Alarm loops from an online clip until reps are done (if the browser blocks
+        autoplay, tap “Simulate one rep” once to unlock audio). Use HTTPS or localhost for the camera.
       </Text>
 
       <View style={styles.cameraBox}>

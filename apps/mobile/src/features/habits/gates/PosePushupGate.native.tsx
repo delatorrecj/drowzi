@@ -4,6 +4,7 @@ import { Camera, useCameraPermission } from 'react-native-vision-camera';
 import { useTensorflowModel } from 'react-native-fast-tflite';
 
 import type { HabitGateProps } from '@/src/features/habits/gates/types';
+import { usePushupAlarmLoop } from '@/src/features/habits/hooks/usePushupAlarmLoop';
 import { PushupMovenetCamera } from '@/src/features/habits/gates/PushupMovenetCamera';
 import { getMovenetRgbInputSize, movenetLightningTflite } from '@/src/features/pushup/movenetModel';
 import { parseMovenetOutputToLeftArm } from '@/src/features/pushup/movenetKeypoints';
@@ -27,6 +28,7 @@ export function PosePushupGate({ alarm, onVerified }: HabitGateProps) {
   const [cameraActive, setCameraActive] = useState(true);
   const [reps, setReps] = useState(0);
   const [done, setDone] = useState(false);
+  usePushupAlarmLoop(!done);
   const doneRef = useRef(false);
   const machineRef = useRef(
     createPushUpRepMachine({
@@ -138,6 +140,9 @@ export function PosePushupGate({ alarm, onVerified }: HabitGateProps) {
     <View style={styles.wrap}>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.hint}>{modelHint}</Text>
+      <Text style={styles.hint}>
+        Alarm sound loops until you finish {repTarget} reps (loads from the network).
+      </Text>
 
       {!hasPermission ? (
         <Text style={styles.hint}>Allow camera to count reps from your form.</Text>
