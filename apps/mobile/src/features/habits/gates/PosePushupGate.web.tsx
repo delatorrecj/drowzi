@@ -105,7 +105,7 @@ export function PosePushupGate({ alarm, onVerified }: HabitGateProps) {
   }, [feedAngle]);
 
   const title = useMemo(
-    () => `Push-ups: ${reps} / ${repTarget}${done ? ' — done' : ''}`,
+    () => `Repetitions: ${reps} / ${repTarget}${done ? ' — done' : ''}`,
     [done, repTarget, reps],
   );
 
