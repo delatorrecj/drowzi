@@ -20,11 +20,16 @@ function tensorElementBytes(dataType: Tensor['dataType']): number {
   }
 }
 
+/** Total byte length of one input tensor as laid out in TFLite buffers. */
 export function getTensorByteLength(tensor: Tensor): number {
   const n = tensor.shape.reduce((a, b) => a * b, 1);
   return n * tensorElementBytes(tensor.dataType);
 }
 
+/**
+ * Allocates an input buffer filled with `fill` (default 0).
+ * For quantized uint8 RGB, callers often use mid-gray 114 or 0.
+ */
 export function allocateModelInputTensor(tensor: Tensor, fill: number = 0): ArrayBuffer {
   const len = getTensorByteLength(tensor);
   const buf = new ArrayBuffer(len);
@@ -40,23 +45,13 @@ export function allocateModelInputTensor(tensor: Tensor, fill: number = 0): Arra
   return buf;
 }
 
-/** Last two spatial dims before channels (handles NHWC). */
-export function getMovenetRgbInputSize(model: TfliteModel): { width: number; height: number } {
-  const s = model.inputs[0].shape.filter((d) => d > 0);
-  if (s.length >= 3) {
-    const h = s[s.length - 3]!;
-    const w = s[s.length - 2]!;
-    return { width: w, height: h };
-  }
-  return { width: 192, height: 192 };
-}
-
 export const movenetLightningTflite = require('../../../assets/models/movenet_lightning_float16.tflite');
 
 export async function loadMovenetLightningModel(): Promise<TfliteModel> {
   return loadTensorflowModel(movenetLightningTflite, []);
 }
 
+/** Run inference; returns raw output buffers (interpret with movenetKeypoints). */
 export async function runMovenet(model: TfliteModel, input: ArrayBuffer): Promise<ArrayBuffer[]> {
   return model.run([input]);
 }

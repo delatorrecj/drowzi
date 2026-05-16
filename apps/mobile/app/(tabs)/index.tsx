@@ -2,8 +2,11 @@ import { useCallback, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Linking,
   ListRenderItem,
+  Platform,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -15,7 +18,11 @@ import type { Alarm } from '@/src/shared/types';
 import { palette } from '@/src/shared/theme';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
 import { DashboardMascotPlaceholder } from '@/src/features/dashboard/DashboardMascotPlaceholder';
-import { getAlarms } from '@/src/platform/alarmStore';
+import { deleteAlarm, getAlarms } from '@/src/platform/alarmStore';
+import {
+  formatNextAlarmRingSummary,
+  isNotificationPermissionGranted,
+} from '@/src/platform/alarmScheduler';
 import {
   getConsecutiveDayStreak,
   getRecentCompletions,
@@ -54,21 +61,43 @@ export default function DashboardScreen() {
   const [streak, setStreak] = useState(0);
   const [onboarded, setOnboarded] = useState(true);
   const [displayName, setDisplayName] = useState('');
+  const [nextRingById, setNextRingById] = useState<Record<string, string>>({});
+  const [notificationAllowed, setNotificationAllowed] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const refresh = useCallback(async () => {
-    const [list, recent, done, streakDays, name] = await Promise.all([
+    const [list, recent, done, streakDays, name, notifGranted] = await Promise.all([
       getAlarms(),
       getRecentCompletions(7),
       isOnboardingComplete(),
       getConsecutiveDayStreak(),
       getDisplayName(),
+      Platform.OS === 'web' ? Promise.resolve(true) : isNotificationPermissionGranted(),
     ]);
     setAlarms(list);
     setRecentCount(recent.length);
     setOnboarded(done);
     setStreak(streakDays);
     setDisplayName(name);
+    setNotificationAllowed(notifGranted);
+
+    if (Platform.OS === 'web') {
+      setNextRingById({});
+    } else {
+      const rings: Record<string, string> = {};
+      await Promise.all(
+        list.map(async (alarm) => {
+          rings[alarm.id] = await formatNextAlarmRingSummary(alarm);
+        }),
+      );
+      setNextRingById(rings);
+    }
   }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    void refresh().finally(() => setRefreshing(false));
+  }, [refresh]);
 
   useFocusEffect(
     useCallback(() => {
@@ -103,7 +132,7 @@ export default function DashboardScreen() {
     }, []),
   );
 
-  const mascotMood = streak >= 7 ? 'steady' : 'sleepy';
+  const mascotMood = streak >= 7 ? 'pumped' : 'groggy';
 
   const header = (
     <View style={styles.headerBlock}>
@@ -116,6 +145,18 @@ export default function DashboardScreen() {
               <Text style={styles.bannerCtaLabel}>Continue setup</Text>
             </Pressable>
           </Link>
+        </View>
+      ) : null}
+
+      {Platform.OS !== 'web' && !notificationAllowed ? (
+        <View style={[styles.banner, styles.warnBanner]}>
+          <Text style={styles.bannerTitle}>Notifications are off</Text>
+          <Text style={styles.bannerBody}>
+            Scheduled alarms cannot fire until the system allows Drowzi to notify you.
+          </Text>
+          <Pressable style={styles.bannerCta} onPress={() => void Linking.openSettings()}>
+            <Text style={styles.bannerCtaLabel}>Open system settings</Text>
+          </Pressable>
         </View>
       ) : null}
 
@@ -153,8 +194,8 @@ export default function DashboardScreen() {
       </View>
 
       <Text style={styles.lede}>
-        New alarms are motion-only for now. Tap Simulate to open the habit gate. Everything stays on this device
-        (and in the browser build via local storage).
+        Alarms notify at the clock time below (daily = next occurrence; if today’s time already passed, the next ring
+        is usually tomorrow unless you tap Edit). Tap Simulate anytime to practise the gate. Not on web.
       </Text>
     </View>
   );
@@ -193,7 +234,34 @@ export default function DashboardScreen() {
           <Text style={styles.badgeLabel}>{habitLabel(item.habitType)}</Text>
         </View>
       </View>
-      <Text style={styles.meta}>{item.recurrence.type} · tap Simulate to test gate</Text>
+      <Text style={styles.nextRing}>{nextRingById[item.id] ?? '—'}</Text>
+      <Text style={styles.meta}>{item.recurrence.type} · tap Simulate to practise the gate now</Text>
+      <Text style={styles.manageHint}>Edit time & reps, or remove this alarm.</Text>
+      <View style={styles.cardActions}>
+        <Pressable
+          style={styles.editAction}
+          accessibilityRole="button"
+          accessibilityLabel={`Edit alarm ${item.time}`}
+          onPress={() => router.push({ pathname: '/add-alarm', params: { id: item.id } })}>
+          <Text style={styles.editActionLabel}>Edit alarm</Text>
+        </Pressable>
+        <Pressable
+          style={styles.deleteAction}
+          accessibilityRole="button"
+          accessibilityLabel={`Delete alarm ${item.time}`}
+          onPress={() =>
+            Alert.alert('Delete alarm', `Remove the ${item.time} alarm?`, [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: () => void deleteAlarm(item.id).then(() => refresh()),
+              },
+            ])
+          }>
+          <Text style={styles.deleteActionLabel}>Delete</Text>
+        </Pressable>
+      </View>
       <Pressable style={styles.simulate} onPress={() => router.push(`/habit-gate/${item.id}`)}>
         <Text style={styles.simulateLabel}>Simulate alarm</Text>
       </Pressable>
@@ -212,6 +280,16 @@ export default function DashboardScreen() {
         ListFooterComponent={footer}
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         renderItem={renderItem}
+        refreshControl={
+          Platform.OS === 'web' ? undefined : (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={dashboardTheme.primary}
+              colors={[dashboardTheme.primary]}
+            />
+          )
+        }
       />
     </SafeAreaView>
   );
@@ -269,6 +347,10 @@ const styles = StyleSheet.create({
   bannerCtaLabel: {
     color: dashboardTheme.textOnPrimary,
     fontWeight: '800',
+  },
+  warnBanner: {
+    borderWidth: 1,
+    borderColor: dashboardTheme.alarmAccent,
   },
   greeting: {
     fontSize: 14,
@@ -420,10 +502,64 @@ const styles = StyleSheet.create({
     color: dashboardTheme.primary,
     textTransform: 'uppercase',
   },
+  nextRing: {
+    marginTop: 6,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '800',
+    color: dashboardTheme.primary,
+  },
   meta: {
     fontSize: 13,
     color: dashboardTheme.textMuted,
     textTransform: 'capitalize',
+  },
+  manageHint: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: dashboardTheme.text,
+    opacity: 0.9,
+    marginTop: 2,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    gap: 10,
+    marginTop: 10,
+  },
+  editAction: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(244, 196, 48, 0.14)',
+    borderWidth: 2,
+    borderColor: dashboardTheme.primary,
+  },
+  editActionLabel: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: dashboardTheme.primary,
+  },
+  deleteAction: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(230, 57, 70, 0.12)',
+    borderWidth: 2,
+    borderColor: dashboardTheme.alarmAccent,
+  },
+  deleteActionLabel: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: dashboardTheme.alarmAccent,
   },
   simulate: {
     marginTop: 4,

@@ -13,8 +13,8 @@ Pin changes during the hackathon; extend types in `src/shared/types.ts`.
 
 ## APIs
 
-- **Alarms:** `getAlarms`, `getAlarmById`, `saveAlarm` — `src/platform/alarmStore.ts`
-- **Scheduler stubs:** `scheduleAlarm` / `cancelAlarm` — `src/platform/alarmScheduler.ts`
+- **Alarms:** `getAlarms`, `getAlarmById`, `saveAlarm` (returns `{ scheduling }` — alerts if permission blocks scheduling) — `src/platform/alarmStore.ts`
+- **Scheduler:** `scheduleAlarm` / `cancelAlarm` — `src/platform/alarmScheduler.ts` (expo-notifications). **Sounds:** expo-notifications on Android resolves custom files from `res/raw` only; the default alert uses the notification channel tone. **`src/platform/openWakeAlarmSoundSettings.ts`** + **More tab** opens the OS picker so Android users can set the channel to any built-in alarm/ringtone. iOS cannot use the Clock alarm tone for local notifications unless you bundle a `.wav/.caf` in the app (`expo-notifications` plugin `sounds`).
 - **Completion:** `recordHabitCompletion` — `src/platform/recordCompletion.ts`
 - **Gate UI registry:** `habitGateRegistry` — `src/features/habits/registry.ts`
 
@@ -30,6 +30,6 @@ First launch hits `/` (`app/index.tsx`) → redirects to `/onboarding` until onb
 
 **Add more alarms:** `app/add-alarm.tsx` — motion-only single screen, then `router.back()`.
 
-**Resume onboarding shortcut:** `/onboarding?resumeStep=1` opens the name step; `resumeStep=2` opens alarm details.
+**Resume onboarding shortcut:** `/onboarding?resumeStep=1` opens the name step; `resumeStep=2` opens alarm details. If those params are omitted, the app restores the last in-progress step (`onboarding_resume_screen` in AsyncStorage) after the user taps Next at least once.
 
 **Skip:** sets AsyncStorage skip flags → Home fires a **one-time** alert; use **`/add-alarm`** or **`/onboarding`** to finish setup.

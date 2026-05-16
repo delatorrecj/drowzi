@@ -3,20 +3,45 @@ import { MOVENET_KEYPOINT, type MovenetPt } from '@/src/features/pushup/movenetT
 
 const LOW_CONFIDENCE = 0.25;
 
+/** Flat / multi-dim MoveNet output -> 17 keypoints (y, x, confidence). */
 export function parseMovenetOutputToKeypoints(firstOutput: ArrayBuffer): MovenetPt[] {
   const f = new Float32Array(firstOutput);
-  if (f.length < 51) {
-    throw new Error(`Unexpected MoveNet output length: ${f.length}`);
+  if (f.length === 51) {
+    const pts: MovenetPt[] = [];
+    for (let i = 0; i < 17; i++) {
+      pts.push({
+        y: f[i * 3],
+        x: f[i * 3 + 1],
+        confidence: f[i * 3 + 2],
+      });
+    }
+    return pts;
   }
-  const pts: MovenetPt[] = [];
-  for (let i = 0; i < 17; i++) {
-    pts.push({
-      y: f[i * 3],
-      x: f[i * 3 + 1],
-      confidence: f[i * 3 + 2],
-    });
+  if (f.length === 17 * 3) {
+    const pts: MovenetPt[] = [];
+    for (let i = 0; i < 17; i++) {
+      pts.push({
+        y: f[i * 3],
+        x: f[i * 3 + 1],
+        confidence: f[i * 3 + 2],
+      });
+    }
+    return pts;
   }
-  return pts;
+  // Some exports use [1,1,17,3]
+  if (f.length >= 1 * 1 * 17 * 3) {
+    const pts: MovenetPt[] = [];
+    for (let i = 0; i < 17; i++) {
+      pts.push({
+        y: f[i * 3],
+        x: f[i * 3 + 1],
+        confidence: f[i * 3 + 2],
+      });
+    }
+    return pts;
+  }
+
+  throw new Error(`Unexpected MoveNet output length: ${f.length} (expected 51 floats)`);
 }
 
 function toPosePoint(p: MovenetPt): PosePoint {

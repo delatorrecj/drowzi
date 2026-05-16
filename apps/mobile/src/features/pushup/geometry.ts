@@ -1,5 +1,6 @@
-import type { PosePoint } from '@/src/features/pushup/poseTypes';
+﻿import type { PosePoint } from '@/src/features/pushup/poseTypes';
 
+/** Angle at b for segments (a->b) and (c->b), degrees [0, 180]. */
 export function calculateAngle(a: PosePoint, b: PosePoint, c: PosePoint): number {
   const abx = a.x - b.x;
   const aby = a.y - b.y;
@@ -16,3 +17,4 @@ export function calculateAngle(a: PosePoint, b: PosePoint, c: PosePoint): number
   const cos = Math.max(-1, Math.min(1, dot / (magAb * magCb)));
   return (Math.acos(cos) * 180) / Math.PI;
 }
+

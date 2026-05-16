@@ -1,22 +1,23 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
+import { mascotAssets } from '@/assets/images/mascot';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
 
 type Props = {
-  /** Swap asset when streak thresholds land (PRD mascot evolution). */
-  mood?: 'sleepy' | 'steady';
+  mood?: keyof typeof mascotAssets;
 };
 
-export function DashboardMascotPlaceholder({ mood = 'sleepy' }: Props) {
+export function DashboardMascotPlaceholder({ mood = 'idle' }: Props) {
+  const imageSource = mascotAssets[mood as keyof typeof mascotAssets] || mascotAssets.idle;
+
   return (
-    <View style={styles.card} accessibilityRole="image" accessibilityLabel="Mascot placeholder">
-      <View style={[styles.frame, mood === 'steady' && styles.frameSteady]}>
-        <FontAwesome name="fire" size={48} color={dashboardTheme.primary} style={styles.icon} />
+    <View style={styles.card} accessibilityRole="image" accessibilityLabel="Mascot">
+      <View style={styles.frame}>
+        <Image source={imageSource} style={styles.mascotImage} resizeMode="contain" />
       </View>
       <Text style={styles.title}>Mascot</Text>
       <Text style={styles.hint}>
-        Add pixel art to assets/dashboard/ — see ASSETS.md ({mood === 'sleepy' ? 'sleepy' : 'steady'} state)
+        State: {mood}
       </Text>
     </View>
   );
@@ -37,12 +38,11 @@ const styles = StyleSheet.create({
     backgroundColor: dashboardTheme.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-  frameSteady: {
-    borderColor: dashboardTheme.primary,
-  },
-  icon: {
-    opacity: 0.85,
+  mascotImage: {
+    width: '100%',
+    height: '100%',
   },
   title: {
     fontSize: 13,

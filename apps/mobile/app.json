@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Drowzi uses the camera to verify motion habits (for example counting push-ups) so the alarm can dismiss."
+        "NSCameraUsageDescription": "Drowzi verifies morning habits using the camera (e.g. push-up pose)."
       }
     },
     "android": {
@@ -29,7 +29,14 @@
         "CAMERA"
       ],
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.drowzi",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.VIBRATE"
+      ]
     },
     "web": {
       "bundler": "metro",

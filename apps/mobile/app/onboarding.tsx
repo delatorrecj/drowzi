@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Video, ResizeMode } from 'expo-av';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   View,
@@ -12,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 
+import { mascotAssets } from '@/assets/images/mascot';
 import {
   PHYSICAL_SETUP_CATEGORY,
   buildHabitConfigFromInputs,
@@ -20,15 +23,33 @@ import {
 import { alarmSetupScreenOptions, alarmSetupStyles as styles } from '@/src/features/alarm/alarmSetupStyles';
 import {
   clearAlarmSetupSkipFlags,
+  clearSavedOnboardingScreen,
+  getSavedOnboardingScreen,
   setAlarmSetupSkipped,
   setDisplayName,
   setOnboardingComplete,
+  setSavedOnboardingScreen,
 } from '@/src/platform/onboarding';
 import { saveAlarm } from '@/src/platform/alarmStore';
+import { notifyIfSchedulingFailed } from '@/src/platform/schedulingFeedback';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
+
+const onboardingStyles = StyleSheet.create({
+  video: {
+    width: '100%',
+    height: 200,
+    borderRadius: 20,
+    marginVertical: 16,
+    backgroundColor: dashboardTheme.surface,
+  },
+});
 
 export default function OnboardingScreen() {
   const { resumeStep } = useLocalSearchParams<{ resumeStep?: string }>();
+  // ... rest of the component
+
+  /** Prevents late AsyncStorage restore from overwriting after the user taps Next/Back. */
+  const ignoreLateRestoreRef = useRef(false);
 
   const [step, setStep] = useState(0);
   const [nameInput, setNameInput] = useState('');
@@ -38,6 +59,7 @@ export default function OnboardingScreen() {
   const selectedCategory = PHYSICAL_SETUP_CATEGORY;
 
   async function finishOnboardingSkip() {
+    await clearSavedOnboardingScreen();
     await setDisplayName(nameInput);
     await setAlarmSetupSkipped(true);
     await setOnboardingComplete(true);
@@ -45,9 +67,44 @@ export default function OnboardingScreen() {
   }
 
   useEffect(() => {
-    if (resumeStep === '1') setStep(1);
-    if (resumeStep === '2') setStep(2);
+    let cancelled = false;
+    void (async () => {
+      if (resumeStep === '1') {
+        if (!cancelled) setStep(1);
+        return;
+      }
+      if (resumeStep === '2') {
+        if (!cancelled) setStep(2);
+        return;
+      }
+      const saved = await getSavedOnboardingScreen();
+      if (cancelled || ignoreLateRestoreRef.current) return;
+      if (saved !== null) setStep(saved);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [resumeStep]);
+
+  function goBackStep() {
+    ignoreLateRestoreRef.current = true;
+    const prev = step - 1;
+    setStep(prev);
+    if (prev === 0) void clearSavedOnboardingScreen();
+    else void setSavedOnboardingScreen(prev as 1 | 2);
+  }
+
+  function goForwardFromWelcome() {
+    ignoreLateRestoreRef.current = true;
+    setStep(1);
+    void setSavedOnboardingScreen(1);
+  }
+
+  function goForwardFromName() {
+    ignoreLateRestoreRef.current = true;
+    setStep(2);
+    void setSavedOnboardingScreen(2);
+  }
 
   const habitConfig = useMemo(
     () => buildHabitConfigFromInputs(selectedCategory.habitType, repInput, '', ''),
@@ -72,8 +129,10 @@ export default function OnboardingScreen() {
       createdAt: new Date().toISOString(),
     };
 
-    await saveAlarm(alarm);
+    const { scheduling } = await saveAlarm(alarm);
+    notifyIfSchedulingFailed(scheduling);
     await clearAlarmSetupSkipFlags();
+    await clearSavedOnboardingScreen();
     await setDisplayName(nameInput);
     await setOnboardingComplete(true);
     router.replace('/(tabs)');
@@ -100,6 +159,14 @@ export default function OnboardingScreen() {
           {step === 0 ? (
             <View style={styles.block}>
               <Text style={styles.kicker}>Meet Drowzi</Text>
+              <Video
+                source={mascotAssets.intro}
+                style={onboardingStyles.video}
+                resizeMode={ResizeMode.COVER}
+                shouldPlay
+                isLooping
+                isMuted
+              />
               <Text style={styles.hero}>Grogginess loses. Your habit wins.</Text>
               <Text style={styles.body}>
                 For now your alarm is gated by one thing only: a physical habit — reps counted by motion so you
@@ -156,17 +223,17 @@ export default function OnboardingScreen() {
 
           <View style={styles.footer}>
             {step > 0 ? (
-              <Pressable style={styles.secondary} onPress={() => setStep(step - 1)}>
+              <Pressable style={styles.secondary} onPress={goBackStep}>
                 <Text style={styles.secondaryLabel}>Back</Text>
               </Pressable>
             ) : null}
 
             {step === 0 ? (
-              <Pressable style={styles.primary} onPress={() => setStep(1)}>
+              <Pressable style={styles.primary} onPress={goForwardFromWelcome}>
                 <Text style={styles.primaryLabel}>Next</Text>
               </Pressable>
             ) : step === 1 ? (
-              <Pressable style={styles.primary} onPress={() => setStep(2)}>
+              <Pressable style={styles.primary} onPress={goForwardFromName}>
                 <Text style={styles.primaryLabel}>Next</Text>
               </Pressable>
             ) : (
