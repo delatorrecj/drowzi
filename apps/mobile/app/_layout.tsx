@@ -11,6 +11,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { alarmSetupScreenOptions } from '@/src/features/alarm/alarmSetupStyles';
 import { useAlarmNotificationResponse } from '@/src/platform/useAlarmNotificationResponse';
 import { fonts, loadAppFonts } from '@/src/shared/theme';
+import '@/src/platform/visionCameraWorklets';
 
 export {
   // Catch any errors thrown by the Layout component.
