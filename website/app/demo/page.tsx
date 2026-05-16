@@ -1,5 +1,5 @@
-import DemoHub from "@/components/demo/DemoHub";
+import DemoHome from "@/components/demo/DemoHome";
 
 export default function DemoPage() {
-  return <DemoHub />;
+  return <DemoHome />;
 }

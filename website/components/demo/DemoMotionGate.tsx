@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { SiteIcon } from "@/components/SiteIcons";
 import { createPushUpRepMachine } from "@/lib/demo/core/pushUpRepStateMachine";
 import {
   DEFAULT_BENT_MAX,
@@ -10,6 +11,7 @@ import {
   DEFAULT_REP_TARGET,
 } from "@/lib/demo/demoDefaults";
 import { todayLocalDate } from "@/lib/demo/date";
+import { demoTheme } from "@/lib/demo/demoTheme";
 import { leftArmFromBlazePoseLandmarks } from "@/lib/demo/pose/blazePoseToLeftArm";
 import { useCameraStream } from "@/lib/demo/pose/useCameraStream";
 import { usePoseLandmarker } from "@/lib/demo/pose/usePoseLandmarker";
@@ -111,60 +113,90 @@ export default function DemoMotionGate({ alarm, onVerified, standalone = false }
     if (snap.reps >= config.repTarget && !done) void finish();
   };
 
-  return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-3xl font-extrabold text-[#F4C430]">Motion gate</h1>
-        <p className="mt-2 font-body text-[#9A7A50]">
-          Do {config.repTarget} push-ups. Camera counts reps from your elbow angle.
-        </p>
-      </div>
+  const progress = Math.min(100, (reps / config.repTarget) * 100);
 
-      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl border border-[#4A3015] bg-black">
+  return (
+    <div className="flex h-full min-h-0 flex-1 flex-col">
+      <div className="relative min-h-0 flex-1 bg-black">
         <video
           ref={videoRef}
-          className="h-full w-full scale-x-[-1] object-cover"
+          className="absolute inset-0 h-full w-full scale-x-[-1] object-cover"
           playsInline
           muted
         />
+
+        <Viewfinder />
+
         {!active && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/75 px-6">
+            <SiteIcon name="figure" className="h-14 w-14" stroke={demoTheme.primary} />
+            <p className="text-center font-body text-sm text-text-muted">
+              Do {config.repTarget} push-ups. Camera counts reps from your elbow angle.
+            </p>
             <button
               type="button"
               onClick={() => setActive(true)}
-              className="rounded-xl bg-[#F4C430] px-6 py-3 font-display font-bold text-[#654321]"
+              className="rounded-xl px-6 py-3 font-display text-sm font-bold"
+              style={{ backgroundColor: demoTheme.primary, color: demoTheme.textOnPrimary }}
             >
               Start camera
             </button>
           </div>
         )}
+
+        {active && (
+          <div className="pointer-events-none absolute left-1/2 top-[38%] -translate-x-1/2">
+            <p className="rounded-full bg-primary/20 px-3 py-1 font-display text-[10px] font-bold text-primary">
+              {phase === "bottom" ? "Push up" : "Lower down"}
+            </p>
+          </div>
+        )}
       </div>
 
-      <div className="rounded-2xl border border-[#4A3015] bg-[#2E1F0A] p-5 text-center">
-        <p className="font-display text-5xl font-extrabold text-[#F4C430]">
-          {reps} / {config.repTarget}
-        </p>
-        <p className="mt-2 font-body text-sm text-[#9A7A50]">
-          Elbow: {angle ?? "—"}° · Phase: {phase}
-        </p>
-        <p className="mt-1 font-body text-xs text-[#9A7A50]">
+      <div
+        className="shrink-0 border-t px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+        style={{
+          borderColor: demoTheme.border,
+          background: "linear-gradient(180deg, #0F0A05 0%, #1A1209 100%)",
+        }}
+      >
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="font-display text-4xl font-extrabold text-text">
+              {reps}
+              <span className="text-primary">/{config.repTarget}</span>
+            </p>
+            <p className="mt-1 font-body text-xs text-text-muted">
+              Push-ups · elbow {angle ?? "—"}°
+            </p>
+          </div>
+          {done && (
+            <p className="rounded-lg bg-primary/20 px-3 py-1.5 font-display text-xs font-bold text-primary">
+              Verified
+            </p>
+          )}
+        </div>
+        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-border">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <p className="mt-2 font-body text-[10px] text-text-muted">
           Pose: {poseStatus} · Camera: {camStatus}
         </p>
       </div>
 
       {(camError || poseError) && (
-        <p className="text-sm text-[#E63946]">{camError ?? poseError}</p>
-      )}
-
-      {done && (
-        <p className="rounded-xl bg-[#F4C430]/20 px-4 py-3 text-center font-display font-bold text-[#F4C430]">
-          Habit verified!
-        </p>
+        <p className="shrink-0 px-4 pb-2 text-center text-xs text-alarm">{camError ?? poseError}</p>
       )}
 
       {debug && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-[#4A3015] p-4">
-          <label className="flex flex-col gap-1 font-body text-sm">
+        <div
+          className="shrink-0 flex flex-col gap-3 border-t px-4 py-3"
+          style={{ borderColor: demoTheme.border }}
+        >
+          <label className="flex flex-col gap-1 font-body text-xs text-text-muted">
             Extended min (°)
             <input
               type="range"
@@ -175,7 +207,7 @@ export default function DemoMotionGate({ alarm, onVerified, standalone = false }
             />
             {extendedMin}
           </label>
-          <label className="flex flex-col gap-1 font-body text-sm">
+          <label className="flex flex-col gap-1 font-body text-xs text-text-muted">
             Bent max (°)
             <input
               type="range"
@@ -189,12 +221,34 @@ export default function DemoMotionGate({ alarm, onVerified, standalone = false }
           <button
             type="button"
             onClick={simulateRep}
-            className="rounded-lg border border-[#4A3015] py-2 font-body text-sm"
+            className="rounded-lg border py-2 font-body text-xs text-text-muted"
+            style={{ borderColor: demoTheme.border }}
           >
             Simulate one rep
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function Viewfinder() {
+  return (
+    <div className="pointer-events-none absolute inset-8">
+      {(["tl", "tr", "bl", "br"] as const).map((pos) => (
+        <div
+          key={pos}
+          className={`absolute h-5 w-5 border-2 border-primary ${
+            pos === "tl"
+              ? "left-0 top-0 border-b-0 border-r-0 rounded-tl-md"
+              : pos === "tr"
+                ? "right-0 top-0 border-b-0 border-l-0 rounded-tr-md"
+                : pos === "bl"
+                  ? "bottom-0 left-0 border-r-0 border-t-0 rounded-bl-md"
+                  : "bottom-0 right-0 border-l-0 border-t-0 rounded-br-md"
+          }`}
+        />
+      ))}
     </div>
   );
 }

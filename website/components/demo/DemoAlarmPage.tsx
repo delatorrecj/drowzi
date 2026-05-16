@@ -9,6 +9,7 @@ import {
   scheduleAlarmInServiceWorker,
 } from "@/lib/demo/alarm/scheduleAlarm";
 import { DEMO_ALARMS } from "@/lib/demo/demoDefaults";
+import { demoTheme } from "@/lib/demo/demoTheme";
 import { ensureDemoSeed, saveAlarm } from "@/lib/demo/storage/db";
 
 export default function DemoAlarmPage() {
@@ -54,21 +55,21 @@ export default function DemoAlarmPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-3xl font-extrabold text-[#F4C430]">Alarm demo</h1>
-        <p className="mt-2 font-body text-[#9A7A50]">
-          Schedule a one-shot alarm. On Android Chrome, background tabs may still fire via the service
-          worker.
-        </p>
+    <div className="flex flex-col gap-5">
+      <p className="font-body text-sm leading-relaxed text-text-muted">
+        Schedule a one-shot alarm. On Android Chrome, background tabs may still fire via the service
+        worker.
+      </p>
+
+      <div
+        className="rounded-2xl border p-4 font-body text-sm text-text-muted"
+        style={{ borderColor: demoTheme.border, backgroundColor: demoTheme.surface }}
+      >
+        <strong className="text-primary">Platform note:</strong> iOS Safari limits background alarms.
+        Keep the tab open or add to Home Screen for best results.
       </div>
 
-      <div className="rounded-2xl border border-[#4A3015] bg-[#2E1F0A] p-4 font-body text-sm text-[#9A7A50]">
-        <strong className="text-[#F4C430]">Platform note:</strong> iOS Safari limits background
-        alarms. Keep the tab open or add to Home Screen for best results.
-      </div>
-
-      <label className="flex flex-col gap-2 font-body text-sm">
+      <label className="flex flex-col gap-2 font-body text-sm text-text-muted">
         Fire in (seconds)
         <input
           type="number"
@@ -76,7 +77,8 @@ export default function DemoAlarmPage() {
           max={120}
           value={seconds}
           onChange={(e) => setSeconds(Number(e.target.value))}
-          className="rounded-lg border border-[#4A3015] bg-[#1A1209] px-3 py-2"
+          className="rounded-lg border bg-bg px-3 py-2 text-text"
+          style={{ borderColor: demoTheme.border }}
         />
       </label>
 
@@ -84,24 +86,30 @@ export default function DemoAlarmPage() {
         type="button"
         disabled={armed}
         onClick={() => void arm()}
-        className="rounded-xl bg-[#F4C430] py-3 font-display font-bold text-[#654321] disabled:opacity-50"
+        className="rounded-xl py-3 font-display text-sm font-bold disabled:opacity-50"
+        style={{ backgroundColor: demoTheme.primary, color: demoTheme.textOnPrimary }}
       >
         {armed ? `Armed — fires in ${seconds}s` : "Arm alarm"}
       </button>
 
       {fired && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-[#E63946] bg-[#E63946]/10 p-5">
-          <p className="font-display text-xl font-bold text-[#E63946]">Alarm ringing!</p>
+        <div
+          className="flex flex-col gap-3 rounded-2xl border p-5 animate-alarm-glow"
+          style={{ borderColor: demoTheme.alarm, backgroundColor: `${demoTheme.alarm}18` }}
+        >
+          <p className="font-display text-xl font-extrabold text-alarm">Alarm ringing!</p>
           <Link
             href={`/demo/gate?alarmId=${DEMO_ALARMS[0].id}&fired=1`}
-            className="rounded-xl bg-[#E63946] py-3 text-center font-display font-bold text-white"
+            className="rounded-xl py-3 text-center font-display text-sm font-bold text-white"
+            style={{ backgroundColor: demoTheme.alarm }}
           >
             Open habit gate
           </Link>
           <button
             type="button"
             onClick={dismiss}
-            className="rounded-xl border border-[#4A3015] py-2 font-body text-sm"
+            className="rounded-xl border py-2 font-body text-xs text-text-muted"
+            style={{ borderColor: demoTheme.border }}
           >
             Stop sound (dev)
           </button>

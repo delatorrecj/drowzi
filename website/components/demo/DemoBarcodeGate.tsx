@@ -5,6 +5,7 @@ import { BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser"
 
 import { DEMO_BARCODE_VALUE } from "@/lib/demo/demoDefaults";
 import { todayLocalDate } from "@/lib/demo/date";
+import { demoTheme } from "@/lib/demo/demoTheme";
 import {
   listRegisteredBarcodes,
   recordHabitCompletion,
@@ -81,38 +82,70 @@ export default function DemoBarcodeGate({ alarm, onVerified }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-3xl font-extrabold text-[#F4C430]">Barcode gate</h1>
-        <p className="mt-2 font-body text-[#9A7A50]">
-          Scan your registered item. Demo expects: <strong className="text-[#F5E6C8]">{expected}</strong>
-        </p>
+    <div className="flex h-full min-h-0 flex-1 flex-col">
+      <div className="relative min-h-0 flex-1 bg-black">
+        <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" muted playsInline />
+        <Viewfinder />
+        <div className="pointer-events-none absolute inset-x-0 top-[32%] h-px animate-scan-line bg-primary/80 shadow-[0_0_8px_#F4C430]" />
+        <div className="absolute left-1/2 top-[40%] -translate-x-1/2 rounded-lg bg-white/95 px-3 py-2 shadow-lg">
+          <p className="text-center font-display text-[10px] font-bold text-text-dark">Aim at item</p>
+        </div>
       </div>
 
-      <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-[#4A3015] bg-black">
-        <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
-      </div>
-
-      <p className="text-center font-body text-sm text-[#9A7A50]">
-        Status: {status}
-        {lastScan ? ` · Last: ${lastScan}` : ""}
-      </p>
-
-      {error && <p className="text-sm text-[#E63946]">{error}</p>}
-
-      {status === "matched" && (
-        <p className="rounded-xl bg-[#F4C430]/20 px-4 py-3 text-center font-display font-bold text-[#F4C430]">
-          Barcode verified!
-        </p>
-      )}
-
-      <button
-        type="button"
-        onClick={() => void registerDemo()}
-        className="rounded-xl border border-[#4A3015] py-3 font-body text-sm text-[#9A7A50]"
+      <div
+        className="shrink-0 border-t px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+        style={{
+          borderColor: demoTheme.border,
+          background: "linear-gradient(180deg, #0F0A05 0%, #1A1209 100%)",
+        }}
       >
-        Register demo barcode locally
-      </button>
+        <p className="font-display text-lg font-extrabold text-text">Scan to dismiss</p>
+        <p className="mt-1 font-body text-xs text-text-muted">
+          Expected: <span className="text-text">{expected}</span>
+        </p>
+        <p className="mt-2 font-body text-[10px] text-text-muted">
+          Status: {status}
+          {lastScan ? ` · Last: ${lastScan}` : ""}
+        </p>
+
+        {status === "matched" && (
+          <p className="mt-2 rounded-lg bg-primary/20 px-3 py-2 text-center font-display text-xs font-bold text-primary">
+            Barcode verified!
+          </p>
+        )}
+
+        {error && <p className="mt-2 text-xs text-alarm">{error}</p>}
+
+        <button
+          type="button"
+          onClick={() => void registerDemo()}
+          className="mt-3 w-full rounded-xl border py-2.5 font-body text-xs text-text-muted"
+          style={{ borderColor: demoTheme.border }}
+        >
+          Register demo barcode locally
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Viewfinder() {
+  return (
+    <div className="pointer-events-none absolute inset-8">
+      {(["tl", "tr", "bl", "br"] as const).map((pos) => (
+        <div
+          key={pos}
+          className={`absolute h-5 w-5 border-2 border-primary ${
+            pos === "tl"
+              ? "left-0 top-0 border-b-0 border-r-0 rounded-tl-md"
+              : pos === "tr"
+                ? "right-0 top-0 border-b-0 border-l-0 rounded-tr-md"
+                : pos === "bl"
+                  ? "bottom-0 left-0 border-r-0 border-t-0 rounded-bl-md"
+                  : "bottom-0 right-0 border-l-0 border-t-0 rounded-br-md"
+          }`}
+        />
+      ))}
     </div>
   );
 }
