@@ -7,7 +7,8 @@ type DemoPhoneChromeProps = {
 export default function DemoPhoneChrome({ children }: DemoPhoneChromeProps) {
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-bg text-text">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between px-5 pt-3 pb-1 text-text-muted">
+      {/* Decorative status bar — mockup only (desktop bezel) */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 hidden items-center justify-between px-5 pt-3 pb-1 text-text-muted md:flex">
         <span className="font-display text-[11px] font-bold">6:30</span>
         <div className="absolute left-1/2 top-2.5 h-[26px] w-[90px] -translate-x-1/2 rounded-full bg-black/80" />
         <div className="flex items-center gap-1 text-[10px]">
@@ -16,9 +17,11 @@ export default function DemoPhoneChrome({ children }: DemoPhoneChromeProps) {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col pt-9">{children}</div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden pt-[env(safe-area-inset-top,0px)] md:pt-9">
+        {children}
+      </div>
 
-      <div className="pointer-events-none absolute bottom-2 left-1/2 z-20 h-1 w-28 -translate-x-1/2 rounded-full bg-white/30" />
+      <div className="pointer-events-none absolute bottom-2 left-1/2 z-20 hidden h-1 w-28 -translate-x-1/2 rounded-full bg-white/30 md:block" />
     </div>
   );
 }

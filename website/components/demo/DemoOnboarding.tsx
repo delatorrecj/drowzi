@@ -54,9 +54,11 @@ export default function DemoOnboarding({ onComplete }: DemoOnboardingProps) {
     onComplete();
   }
 
+  const scrollableStep = step === 1 || step === 2 || step === 3;
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 gap-1.5 px-4 pb-3">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex shrink-0 gap-1.5 px-4 pb-2 pt-1 md:pb-3">
         {[0, 1, 2, 3, 4].map((i) => (
           <div
             key={i}
@@ -69,10 +71,16 @@ export default function DemoOnboarding({ onComplete }: DemoOnboardingProps) {
         ))}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+      <div
+        className={`min-h-0 flex-1 px-4 ${
+          scrollableStep
+            ? "overflow-y-auto overscroll-contain pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            : "overflow-hidden pb-2"
+        }`}
+      >
         {step === 0 && (
           <StepBlock kicker="Meet Drowzi" title="Grogginess loses. Your habit wins.">
-            <DemoMascot mood={STEP_MASCOT[0]} showBadge={false} />
+            <DemoMascot mood={STEP_MASCOT[0]} showBadge={false} size="md" />
             <p className="font-body text-sm leading-relaxed text-text-muted">
               Drowzi is the only alarm that doesn&apos;t stop until you do your habit. Verified by your
               phone&apos;s sensors — camera, mic, and motion.
@@ -164,7 +172,7 @@ export default function DemoOnboarding({ onComplete }: DemoOnboardingProps) {
       </div>
 
       <div
-        className="shrink-0 space-y-2 border-t px-4 py-3"
+        className="shrink-0 space-y-2 border-t px-4 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] md:py-3"
         style={{ borderColor: demoTheme.border }}
       >
         <div className="flex gap-2">
@@ -218,9 +226,9 @@ function StepBlock({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <p className="font-display text-[10px] font-bold uppercase tracking-widest text-primary">{kicker}</p>
-      <h2 className="font-display text-xl font-extrabold leading-tight text-text">{title}</h2>
+      <h2 className="font-display text-lg font-extrabold leading-tight text-text md:text-xl">{title}</h2>
       {children}
     </div>
   );

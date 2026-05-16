@@ -71,7 +71,7 @@ export default function DemoDashboard({ onRestartOnboarding }: DemoDashboardProp
   const greeting = name ? `Morning, ${name}` : "Morning accountability";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-6">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:pb-6">
       <div className="flex flex-col gap-4 pb-4">
         <div>
           <p className="font-display text-xs font-bold uppercase tracking-wider text-text-muted">

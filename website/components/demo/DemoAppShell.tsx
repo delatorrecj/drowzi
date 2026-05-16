@@ -72,7 +72,7 @@ export default function DemoAppShell({ children }: DemoAppShellProps) {
           <h1 className="min-w-0 flex-1 truncate font-display text-base font-extrabold text-primary">{title}</h1>
         </header>
       ) : (
-        <header className="flex h-11 shrink-0 items-center justify-center px-3">
+        <header className="flex h-10 shrink-0 items-center justify-center px-3 md:h-11">
           <span className="font-display text-lg font-extrabold tracking-tight text-primary">Drowzi</span>
         </header>
       )}
@@ -86,7 +86,7 @@ export default function DemoAppShell({ children }: DemoAppShellProps) {
       </main>
 
       {hub ? (
-        <p className="shrink-0 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-0.5 text-center font-body text-[9px] text-text-muted">
+        <p className="hidden shrink-0 pb-[env(safe-area-inset-bottom,0px)] pt-0.5 text-center font-body text-[9px] text-text-muted md:block">
           <Link href="/" className="underline decoration-border underline-offset-2 hover:text-primary">
             Marketing site
           </Link>

@@ -9,5 +9,12 @@ export const metadata: Metadata = {
 };
 
 export default function DemoLayout({ children }: { children: React.ReactNode }) {
-  return <DemoLayoutShell>{children}</DemoLayoutShell>;
+  return (
+    <div
+      data-demo-app
+      className="h-[100dvh] max-h-[100dvh] w-full overflow-hidden supports-[height:100dvh]:h-dvh supports-[max-height:100dvh]:max-h-dvh md:min-h-dvh md:max-h-none"
+    >
+      <DemoLayoutShell>{children}</DemoLayoutShell>
+    </div>
+  );
 }

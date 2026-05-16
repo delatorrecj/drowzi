@@ -19,10 +19,12 @@ export default function DemoLayoutShell({ children }: DemoLayoutShellProps) {
   }, []);
 
   return (
-    <PhoneFrame>
-      <DemoPhoneChrome>
-        <DemoAppShell>{children}</DemoAppShell>
-      </DemoPhoneChrome>
-    </PhoneFrame>
+    <div className="flex h-full min-h-0 w-full flex-col">
+      <PhoneFrame>
+        <DemoPhoneChrome>
+          <DemoAppShell>{children}</DemoAppShell>
+        </DemoPhoneChrome>
+      </PhoneFrame>
+    </div>
   );
 }

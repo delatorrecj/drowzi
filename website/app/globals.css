@@ -26,6 +26,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Demo app: lock to viewport on mobile — no document scroll */
+@media (max-width: 767px) {
+  html:has([data-demo-app]) {
+    overflow: hidden;
+    height: 100%;
+  }
+
+  body:has([data-demo-app]) {
+    overflow: hidden;
+    height: 100%;
+  }
+}
+
 /* Themed scrollbar */
 * {
   scrollbar-width: thin;

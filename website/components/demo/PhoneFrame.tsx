@@ -10,7 +10,7 @@ const PHONE_H = 580;
 /** Portrait phone chassis — screen area is a flex column for app UI. */
 export default function PhoneFrame({ children }: PhoneFrameProps) {
   return (
-    <div className="flex min-h-dvh w-full items-center justify-center bg-[#0F0A05] p-4 md:p-8">
+    <div className="flex h-full min-h-0 w-full flex-col md:items-center md:justify-center md:bg-[#0F0A05] md:p-8">
       <div
         className="relative mx-auto hidden md:block"
         style={{
@@ -34,7 +34,7 @@ export default function PhoneFrame({ children }: PhoneFrameProps) {
         </div>
       </div>
 
-      <div className="flex min-h-dvh w-full max-w-lg flex-col bg-bg md:hidden">{children}</div>
+      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-bg md:hidden">{children}</div>
     </div>
   );
 }
