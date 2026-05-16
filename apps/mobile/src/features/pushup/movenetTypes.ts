@@ -1,3 +1,4 @@
+/** MoveNet SinglePose Lightning (17 keypoints) — TensorFlow keypoint order. */
 export const MOVENET_KEYPOINT = {
   nose: 0,
   leftEye: 1,
@@ -18,4 +19,5 @@ export const MOVENET_KEYPOINT = {
   rightAnkle: 16,
 } as const;
 
+/** y, x are normalized ~0–1 in model crop; third channel is confidence score. */
 export type MovenetPt = { y: number; x: number; confidence: number };

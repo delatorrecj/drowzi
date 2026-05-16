@@ -1,7 +1,7 @@
+import { Stack } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
@@ -9,6 +9,7 @@ import 'react-native-reanimated';
 import { WebMobileShell } from '@/components/WebMobileShell';
 import { useColorScheme } from '@/components/useColorScheme';
 import { alarmSetupScreenOptions } from '@/src/features/alarm/alarmSetupStyles';
+import { useAlarmNotificationResponse } from '@/src/platform/useAlarmNotificationResponse';
 import { fonts, loadAppFonts } from '@/src/shared/theme';
 import '@/src/platform/visionCameraWorklets';
 
@@ -56,6 +57,8 @@ const navigationFonts = {
 };
 
 function RootLayoutNav() {
+  useAlarmNotificationResponse();
+
   const colorScheme = useColorScheme();
   const base = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
   const navigationTheme = {

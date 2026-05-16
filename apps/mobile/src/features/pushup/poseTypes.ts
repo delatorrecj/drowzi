@@ -1,3 +1,6 @@
+﻿/**
+ * Pose landmarks subset (MediaPipe-style 33-point layout).
+ */
 export type LandmarkId =
   | 'leftShoulder'
   | 'leftElbow'
@@ -18,3 +21,6 @@ export type LeftArmChain = {
   leftElbow: PosePoint;
   leftWrist: PosePoint;
 };
+
+export type PoseLandmarks33 = Partial<Record<LandmarkId, PosePoint>> &
+  Pick<LeftArmChain, 'leftShoulder' | 'leftElbow' | 'leftWrist'>;

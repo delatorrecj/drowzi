@@ -1,4 +1,4 @@
-import type { LeftArmChain } from '@/src/features/pushup/poseTypes';
+﻿import type { LeftArmChain } from '@/src/features/pushup/poseTypes';
 import { calculateAngle } from '@/src/features/pushup/geometry';
 
 export type PushUpPhase = 'top' | 'bottom';
