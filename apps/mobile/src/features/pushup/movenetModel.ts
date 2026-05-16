@@ -4,6 +4,16 @@ import {
   type TfliteModel,
 } from 'react-native-fast-tflite';
 
+/** MoveNet Lightning expects NHWC RGB; derive H/W from the first input tensor. */
+export function getMovenetRgbInputSize(model: TfliteModel): { width: number; height: number } {
+  const input = model.inputs[0];
+  const sh = input?.shape;
+  if (sh && sh.length >= 4) {
+    return { height: sh[1]!, width: sh[2]! };
+  }
+  return { width: 192, height: 192 };
+}
+
 function tensorElementBytes(dataType: Tensor['dataType']): number {
   switch (dataType) {
     case 'uint8':
