@@ -24,6 +24,10 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "package": "com.anonymous.drowzi",
+      "permissions": [
+        "CAMERA"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.drowzi",
@@ -41,15 +45,6 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/icon.png",
-          "color": "#F4C430",
-          "defaultChannel": "drowzi-alarm-v1",
-          "mode": "development"
-        }
-      ],
       "expo-dev-client",
       "expo-sqlite",
       "react-native-fast-tflite"
