@@ -8,7 +8,7 @@ type Props = {
 };
 
 export function DashboardMascotPlaceholder({ mood = 'idle' }: Props) {
-  const imageSource = mascotAssets[mood] || mascotAssets.idle;
+  const imageSource = mascotAssets[mood as keyof typeof mascotAssets] || mascotAssets.idle;
 
   return (
     <View style={styles.card} accessibilityRole="image" accessibilityLabel="Mascot">
