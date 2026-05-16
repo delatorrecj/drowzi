@@ -6,7 +6,6 @@ import useLastNotificationResponse from 'expo-notifications/build/useLastNotific
 import type { NotificationResponse } from 'expo-notifications';
 import { type Href, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { Platform } from 'react-native';
 
 type AlarmPayload = {
   type?: string;
@@ -41,7 +40,6 @@ export function useAlarmNotificationResponse(): void {
   const lastResponse = useLastNotificationResponse();
 
   useEffect(() => {
-    if (Platform.OS === 'web') return;
     if (lastResponse === undefined || lastResponse === null) return;
 
     const href = habitGateHref(lastResponse);
