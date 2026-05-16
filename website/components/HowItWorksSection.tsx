@@ -1,8 +1,11 @@
+import Link from "next/link";
+
 import PhoneMockup from "@/components/PhoneMockup";
 import { SiteIcon } from "@/components/SiteIcons";
 import { COPY } from "@/lib/constants";
 
 const GATE_VARIANTS = ["motion", "barcode", "voice"] as const;
+const GATE_DEMO_PATHS = ["/demo/motion", "/demo/barcode", "/demo/voice"] as const;
 
 export default function HowItWorksSection() {
   return (
@@ -61,6 +64,13 @@ export default function HowItWorksSection() {
               >
                 {gate.body}
               </p>
+
+              <Link
+                href={GATE_DEMO_PATHS[i]}
+                className="font-display text-sm font-bold text-[#F4C430] hover:underline"
+              >
+                {COPY.demo.gateTryLabel} →
+              </Link>
 
               <div
                 className="mt-auto w-full rounded-2xl overflow-hidden py-4"

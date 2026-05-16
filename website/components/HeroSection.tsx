@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import PhoneMockup from "@/components/PhoneMockup";
 import { COPY, SITE } from "@/lib/constants";
 
@@ -47,6 +49,13 @@ export default function HeroSection() {
               <GooglePlayIcon />
               Google Play
             </a>
+            <Link
+              href={SITE.demoUrl}
+              className="inline-flex items-center justify-center gap-3 px-6 py-3 rounded-2xl font-display font-bold text-sm transition-colors hover:border-[#F4C430]"
+              style={{ backgroundColor: "transparent", color: "#F4C430", border: "2px solid #F4C430" }}
+            >
+              {COPY.demo.heroCta}
+            </Link>
           </div>
 
           <p className="font-body text-sm" style={{ color: "#9A7A50" }}>

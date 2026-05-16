@@ -132,7 +132,7 @@ export default function DashboardScreen() {
     }, []),
   );
 
-  const mascotMood = streak >= 7 ? 'steady' : 'sleepy';
+  const mascotMood: MascotMood = streak >= 30 ? 'legendary' : streak >= 14 ? 'thinking2' : streak >= 7 ? 'excited' : 'idle';
 
   const header = (
     <View style={styles.headerBlock}>

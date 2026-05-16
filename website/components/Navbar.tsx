@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { COPY, SITE } from "@/lib/constants";
 
 export default function Navbar() {
@@ -9,12 +11,20 @@ export default function Navbar() {
       >
         {COPY.nav.brand}
       </span>
-      <a
-        href="#download"
-        className="px-5 py-2 rounded-xl font-display font-bold text-sm transition-colors bg-[#F4C430] text-[#654321] hover:bg-[#D9AC1E]"
-      >
-        {COPY.nav.cta}
-      </a>
+      <div className="flex items-center gap-4">
+        <Link
+          href={SITE.demoUrl}
+          className="font-display font-bold text-sm text-[#9A7A50] transition-colors hover:text-[#F4C430]"
+        >
+          {COPY.demo.navLink}
+        </Link>
+        <a
+          href="#download"
+          className="px-5 py-2 rounded-xl font-display font-bold text-sm transition-colors bg-[#F4C430] text-[#654321] hover:bg-[#D9AC1E]"
+        >
+          {COPY.nav.cta}
+        </a>
+      </div>
     </nav>
   );
 }

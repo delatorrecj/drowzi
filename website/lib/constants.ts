@@ -3,6 +3,7 @@ export const SITE = {
   playStoreUrl: "#download",  // replace with real Play Store link
   githubUrl: "https://github.com/delatorrecj/drowzi",
   privacyUrl: "/privacy",
+  demoUrl: "/demo",
 };
 
 export const COPY = {
@@ -98,6 +99,14 @@ export const COPY = {
   cta: {
     headline: ["Your alarm goes off tomorrow.", "What are you going to do about it?"],
     badge: "Free · iOS 16+ · Android 12+",
+  },
+  demo: {
+    heroCta: "Try the web demo",
+    navLink: "Demo",
+    gateTryLabel: "Try it in your browser",
+    ctaSecondary: "Try web demo — no download",
+    hubTitle: "Experience the habit gates",
+    permissionsNote: "Uses camera and microphone. Nothing leaves your device.",
   },
   footer: {
     copyright: `© ${new Date().getFullYear()} Drowzi. All rights reserved.`,

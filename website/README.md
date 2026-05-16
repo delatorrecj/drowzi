@@ -10,9 +10,24 @@ Single-page informational landing page for the Drowzi habit-gated alarm app.
 
 ```bash
 cd website
-npm install
+npm install --ignore-scripts   # use if postinstall fails on paths with "&"
+node scripts/download-pose-model.mjs
 npm run dev        # http://localhost:3000
+npm run dev:lan    # listen on 0.0.0.0 for phone testing
 ```
+
+Scripts invoke Next via `node ./node_modules/...` so npm works when the repo path contains `&` (Windows bin shim bug).
+
+## Web demo (`/demo`)
+
+Interactive habit gates in the browser (MediaPipe pose, ZXing barcode, Web Speech, IndexedDB, Service Worker alarms).
+
+- Hub: http://localhost:3000/demo
+- Motion tuning: `/demo/motion?debug=1`
+- Requires camera/mic permissions; data stays on-device
+- iOS Safari: background alarms are limited — keep tab open or use Add to Home Screen
+
+`postinstall` downloads `public/models/pose_landmarker_lite.task` (CDN fallback if offline).
 
 ## Build
 

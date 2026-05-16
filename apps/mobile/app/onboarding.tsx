@@ -2,6 +2,7 @@ import { Video, ResizeMode } from 'expo-av';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -42,41 +43,65 @@ const onboardingStyles = StyleSheet.create({
     marginVertical: 16,
     backgroundColor: dashboardTheme.surface,
   },
+  mascotContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  mascotImage: {
+    width: 160,
+    height: 160,
+  },
+  optionCard: {
+    backgroundColor: dashboardTheme.surface,
+    borderWidth: 1,
+    borderColor: dashboardTheme.border,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+  },
+  optionCardSelected: {
+    borderColor: dashboardTheme.primary,
+    backgroundColor: 'rgba(244, 196, 48, 0.1)',
+  },
+  optionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: dashboardTheme.text,
+    marginBottom: 4,
+  },
+  optionDesc: {
+    fontSize: 14,
+    color: dashboardTheme.textMuted,
+    lineHeight: 20,
+  },
+  choiceLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: dashboardTheme.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  }
 });
+
+type Tone = 'supportive' | 'challenger';
+type RootCause = 'physical' | 'mental' | 'environmental';
 
 export default function OnboardingScreen() {
   const { resumeStep } = useLocalSearchParams<{ resumeStep?: string }>();
-  // ... rest of the component
 
-  /** Prevents late AsyncStorage restore from overwriting after the user taps Next/Back. */
   const ignoreLateRestoreRef = useRef(false);
 
   const [step, setStep] = useState(0);
+  const [tone, setTone] = useState<Tone>('challenger');
+  const [rootCause, setRootCause] = useState<RootCause>('physical');
   const [nameInput, setNameInput] = useState('');
   const [timeInput, setTimeInput] = useState('06:30');
   const [repInput, setRepInput] = useState('10');
 
-  const selectedCategory = PHYSICAL_SETUP_CATEGORY;
-
-  async function finishOnboardingSkip() {
-    await clearSavedOnboardingScreen();
-    await setDisplayName(nameInput);
-    await setAlarmSetupSkipped(true);
-    await setOnboardingComplete(true);
-    router.replace('/(tabs)');
-  }
-
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      if (resumeStep === '1') {
-        if (!cancelled) setStep(1);
-        return;
-      }
-      if (resumeStep === '2') {
-        if (!cancelled) setStep(2);
-        return;
-      }
       const saved = await getSavedOnboardingScreen();
       if (cancelled || ignoreLateRestoreRef.current) return;
       if (saved !== null) setStep(saved);
@@ -84,32 +109,30 @@ export default function OnboardingScreen() {
     return () => {
       cancelled = true;
     };
-  }, [resumeStep]);
+  }, []);
 
   function goBackStep() {
     ignoreLateRestoreRef.current = true;
-    const prev = step - 1;
-    setStep(prev);
-    if (prev === 0) void clearSavedOnboardingScreen();
-    else void setSavedOnboardingScreen(prev as 1 | 2);
+    setStep((prev) => prev - 1);
   }
 
-  function goForwardFromWelcome() {
+  function goNextStep() {
     ignoreLateRestoreRef.current = true;
-    setStep(1);
-    void setSavedOnboardingScreen(1);
+    setStep((prev) => prev + 1);
   }
 
-  function goForwardFromName() {
-    ignoreLateRestoreRef.current = true;
-    setStep(2);
-    void setSavedOnboardingScreen(2);
+  async function finishOnboardingSkip() {
+    await clearSavedOnboardingScreen();
+    await setDisplayName(nameInput || 'Friend');
+    await setAlarmSetupSkipped(true);
+    await setOnboardingComplete(true);
+    router.replace('/(tabs)');
   }
 
-  const habitConfig = useMemo(
-    () => buildHabitConfigFromInputs(selectedCategory.habitType, repInput, '', ''),
-    [selectedCategory.habitType, repInput],
-  );
+  const habitConfig = useMemo(() => {
+    const habitType = rootCause === 'physical' ? 'motion' : rootCause === 'mental' ? 'voice' : 'barcode';
+    return buildHabitConfigFromInputs(habitType, repInput, 'Coffee Bag', 'Scan your coffee bag');
+  }, [rootCause, repInput]);
 
   async function handleFinish() {
     const time = normalizeAlarmTime(timeInput);
@@ -118,12 +141,14 @@ export default function OnboardingScreen() {
       return;
     }
 
+    const habitType = rootCause === 'physical' ? 'motion' : rootCause === 'mental' ? 'voice' : 'barcode';
+
     const alarm = {
       id: `alarm-${Date.now()}`,
       userId: 'local-user',
       time,
       recurrence: { type: 'daily' as const },
-      habitType: selectedCategory.habitType,
+      habitType: habitType as any,
       habitConfig,
       isActive: true,
       createdAt: new Date().toISOString(),
@@ -133,13 +158,154 @@ export default function OnboardingScreen() {
     notifyIfSchedulingFailed(scheduling);
     await clearAlarmSetupSkipFlags();
     await clearSavedOnboardingScreen();
-    await setDisplayName(nameInput);
+    await setDisplayName(nameInput || 'Friend');
     await setOnboardingComplete(true);
     router.replace('/(tabs)');
   }
 
-  const headerTitle =
-    step === 0 ? 'Welcome' : step === 1 ? 'Your name' : 'Alarm & reps';
+  const renderStep = () => {
+    switch (step) {
+      case 0:
+        return (
+          <View style={styles.block}>
+            <Text style={styles.kicker}>Meet Drowzi</Text>
+            <View style={onboardingStyles.mascotContainer}>
+              <Image source={mascotAssets.thinking} style={onboardingStyles.mascotImage} resizeMode="contain" />
+            </View>
+            <Text style={styles.hero}>Grogginess loses. Your habit wins.</Text>
+            <Text style={styles.body}>
+              Drowzi is the only alarm that doesn't stop until you do your habit. 
+              Verified by your phone's sensors.
+            </Text>
+            <Text style={styles.bodyMuted}>Let's calibrate your experience.</Text>
+          </View>
+        );
+      case 1:
+        return (
+          <View style={styles.block}>
+            <Text style={styles.kicker}>Question 1 of 3</Text>
+            <Text style={styles.title}>How should we handle your mornings?</Text>
+            <View style={onboardingStyles.mascotContainer}>
+              <Image source={mascotAssets.surprised} style={onboardingStyles.mascotImage} resizeMode="contain" />
+            </View>
+            
+            <Pressable 
+              style={[onboardingStyles.optionCard, tone === 'supportive' && onboardingStyles.optionCardSelected]}
+              onPress={() => setTone('supportive')}
+            >
+              <Text style={onboardingStyles.optionTitle}>The Supportive Companion</Text>
+              <Text style={onboardingStyles.optionDesc}>Empathetic productivity. Soft animations and gentle nudges.</Text>
+            </Pressable>
+
+            <Pressable 
+              style={[onboardingStyles.optionCard, tone === 'challenger' && onboardingStyles.optionCardSelected]}
+              onPress={() => setTone('challenger')}
+            >
+              <Text style={onboardingStyles.optionTitle}>The Challenger</Text>
+              <Text style={onboardingStyles.optionDesc}>The personal trainer. High-contrast UI and firm demands.</Text>
+            </Pressable>
+          </View>
+        );
+      case 2:
+        return (
+          <View style={styles.block}>
+            <Text style={styles.kicker}>Question 2 of 3</Text>
+            <Text style={styles.title}>What keeps you in bed the longest?</Text>
+            <View style={onboardingStyles.mascotContainer}>
+              <Image source={mascotAssets.thinking} style={onboardingStyles.mascotImage} resizeMode="contain" />
+            </View>
+
+            <Pressable 
+              style={[onboardingStyles.optionCard, rootCause === 'physical' && onboardingStyles.optionCardSelected]}
+              onPress={() => setRootCause('physical')}
+            >
+              <Text style={onboardingStyles.optionTitle}>Physical Heaviness</Text>
+              <Text style={onboardingStyles.optionDesc}>Targets biological sleep inertia with movement.</Text>
+            </Pressable>
+
+            <Pressable 
+              style={[onboardingStyles.optionCard, rootCause === 'mental' && onboardingStyles.optionCardSelected]}
+              onPress={() => setRootCause('mental')}
+            >
+              <Text style={onboardingStyles.optionTitle}>Mental Fog</Text>
+              <Text style={onboardingStyles.optionDesc}>Targets cognitive alertness with mindfulness.</Text>
+            </Pressable>
+
+            <Pressable 
+              style={[onboardingStyles.optionCard, rootCause === 'environmental' && onboardingStyles.optionCardSelected]}
+              onPress={() => setRootCause('environmental')}
+            >
+              <Text style={onboardingStyles.optionTitle}>The 'One More Minute' Loop</Text>
+              <Text style={onboardingStyles.optionDesc}>Targets environmental comfort. Get out of the room!</Text>
+            </Pressable>
+          </View>
+        );
+      case 3:
+        return (
+          <View style={styles.block}>
+            <Text style={styles.kicker}>Question 3 of 3</Text>
+            <Text style={styles.title}>Let's set your first anchor</Text>
+            <View style={onboardingStyles.mascotContainer}>
+              <Image source={mascotAssets.excited} style={onboardingStyles.mascotImage} resizeMode="contain" />
+            </View>
+
+            <Text style={styles.label}>Your Name</Text>
+            <TextInput
+              value={nameInput}
+              onChangeText={setNameInput}
+              placeholder="Alex"
+              placeholderTextColor={dashboardTheme.placeholderMuted}
+              style={styles.input}
+            />
+
+            <Text style={styles.label}>First Alarm Time (24h)</Text>
+            <TextInput
+              value={timeInput}
+              onChangeText={setTimeInput}
+              placeholder="06:30"
+              placeholderTextColor={dashboardTheme.placeholderMuted}
+              style={styles.input}
+            />
+
+            {rootCause === 'physical' && (
+              <>
+                <Text style={styles.label}>Push-up Reps</Text>
+                <TextInput
+                  value={repInput}
+                  onChangeText={setRepInput}
+                  keyboardType="number-pad"
+                  style={styles.input}
+                />
+              </>
+            )}
+
+            {rootCause === 'mental' && (
+              <Text style={styles.body}>You'll be asked to read a motivational passage aloud.</Text>
+            )}
+
+            {rootCause === 'environmental' && (
+              <Text style={styles.body}>You'll need to scan a barcode in another room (e.g. coffee maker).</Text>
+            )}
+          </View>
+        );
+      case 4:
+        return (
+          <View style={styles.block}>
+            <Text style={styles.kicker}>Ready to start</Text>
+            <View style={onboardingStyles.mascotContainer}>
+              <Image source={mascotAssets.thinking2} style={onboardingStyles.mascotImage} resizeMode="contain" />
+            </View>
+            <Text style={styles.hero}>Toll Set.</Text>
+            <Text style={styles.body}>
+              To stop tomorrow's alarm, you must meet the bear and complete your habit.
+            </Text>
+            <Text style={styles.bodyMuted}>Consistency evolves your mascot. Don't break the streak.</Text>
+          </View>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <SafeAreaView style={styles.flex} edges={['bottom']}>
@@ -148,103 +314,38 @@ export default function OnboardingScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Stack.Screen
           options={{
-            title: headerTitle,
-            ...alarmSetupScreenOptions,
+            headerShown: false,
           }}
         />
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
-          {step === 0 ? (
-            <View style={styles.block}>
-              <Text style={styles.kicker}>Meet Drowzi</Text>
-              <Video
-                source={mascotAssets.intro}
-                style={onboardingStyles.video}
-                resizeMode={ResizeMode.COVER}
-                shouldPlay
-                isLooping
-                isMuted
-              />
-              <Text style={styles.hero}>Grogginess loses. Your habit wins.</Text>
-              <Text style={styles.body}>
-                For now your alarm is gated by one thing only: a physical habit — reps counted by motion so you
-                actually get out of sleep inertia. More habit types come later.
-              </Text>
-              <Text style={styles.bodyMuted}>Three quick steps. Under two minutes.</Text>
-            </View>
-          ) : step === 1 ? (
-            <View style={styles.block}>
-              <Text style={styles.kicker}>Step 2 of 3</Text>
-              <Text style={styles.title}>What should we call you?</Text>
-              <Text style={styles.lede}>We&apos;ll use this to greet you on your dashboard.</Text>
-
-              <Text style={styles.label}>Your name</Text>
-              <TextInput
-                value={nameInput}
-                onChangeText={setNameInput}
-                placeholder="Alex"
-                placeholderTextColor={dashboardTheme.placeholderMuted}
-                style={styles.input}
-                autoCapitalize="words"
-                autoCorrect={false}
-                maxLength={48}
-                accessibilityLabel="Your display name"
-              />
-            </View>
-          ) : (
-            <View style={styles.block}>
-              <Text style={styles.kicker}>Step 3 of 3</Text>
-              <Text style={styles.title}>When & how many reps</Text>
-              <Text style={styles.lede}>Motion-only · {selectedCategory.subtitle}</Text>
-
-              <Text style={styles.label}>Wake time (24h)</Text>
-              <TextInput
-                value={timeInput}
-                onChangeText={setTimeInput}
-                keyboardType="numbers-and-punctuation"
-                placeholder="06:30"
-                placeholderTextColor={dashboardTheme.placeholderMuted}
-                style={styles.input}
-                accessibilityLabel="Alarm time in 24 hour format"
-              />
-
-              <Text style={styles.label}>Rep target</Text>
-              <TextInput
-                value={repInput}
-                onChangeText={setRepInput}
-                keyboardType="number-pad"
-                style={styles.input}
-                accessibilityLabel="Number of repetitions"
-              />
-            </View>
-          )}
+          
+          {renderStep()}
 
           <View style={styles.footer}>
-            {step > 0 ? (
+            {step > 0 && (
               <Pressable style={styles.secondary} onPress={goBackStep}>
                 <Text style={styles.secondaryLabel}>Back</Text>
               </Pressable>
-            ) : null}
+            )}
 
-            {step === 0 ? (
-              <Pressable style={styles.primary} onPress={goForwardFromWelcome}>
-                <Text style={styles.primaryLabel}>Next</Text>
-              </Pressable>
-            ) : step === 1 ? (
-              <Pressable style={styles.primary} onPress={goForwardFromName}>
+            {step < 4 ? (
+              <Pressable style={styles.primary} onPress={goNextStep}>
                 <Text style={styles.primaryLabel}>Next</Text>
               </Pressable>
             ) : (
               <Pressable style={styles.primary} onPress={() => void handleFinish()}>
-                <Text style={styles.primaryLabel}>Save first alarm</Text>
+                <Text style={styles.primaryLabel}>Commit to Morning</Text>
               </Pressable>
             )}
 
-            <Pressable style={styles.ghost} onPress={() => void finishOnboardingSkip()}>
-              <Text style={styles.ghostLabel}>Skip for now</Text>
-            </Pressable>
+            {step === 0 && (
+              <Pressable style={styles.ghost} onPress={() => void finishOnboardingSkip()}>
+                <Text style={styles.ghostLabel}>Skip for now</Text>
+              </Pressable>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
