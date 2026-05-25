@@ -1,16 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { Alarm } from '@/src/shared/types';
+import { parseHabitConfig } from '@/src/shared/habitConfigSchema';
 
 import { cancelAlarm, scheduleAlarm, type ScheduleAlarmResult } from '@/src/platform/alarmScheduler';
 import { storageKeys } from '@/src/platform/storage';
+
+function normalizeAlarm(alarm: Alarm): Alarm {
+  return {
+    ...alarm,
+    habitConfig: parseHabitConfig(alarm.habitType, alarm.habitConfig),
+  };
+}
 
 async function readRaw(): Promise<Alarm[]> {
   const raw = await AsyncStorage.getItem(storageKeys.alarms);
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as Alarm[];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(normalizeAlarm);
   } catch {
     return [];
   }
@@ -31,14 +40,15 @@ export async function getAlarmById(id: string): Promise<Alarm | null> {
 }
 
 export async function saveAlarm(alarm: Alarm): Promise<{ scheduling: ScheduleAlarmResult }> {
+  const normalized = normalizeAlarm(alarm);
   const alarms = await readRaw();
-  const idx = alarms.findIndex((a) => a.id === alarm.id);
-  if (idx >= 0) alarms[idx] = alarm;
-  else alarms.push(alarm);
+  const idx = alarms.findIndex((a) => a.id === normalized.id);
+  if (idx >= 0) alarms[idx] = normalized;
+  else alarms.push(normalized);
   await writeRaw(alarms);
-  await cancelAlarm(alarm.id);
-  if (alarm.isActive) {
-    const scheduling = await scheduleAlarm(alarm);
+  await cancelAlarm(normalized.id);
+  if (normalized.isActive) {
+    const scheduling = await scheduleAlarm(normalized);
     return { scheduling };
   }
   return { scheduling: { ok: true } };

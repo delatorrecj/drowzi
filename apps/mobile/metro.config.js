@@ -18,8 +18,14 @@ if (!assetExts.includes('wasm')) {
 }
 config.resolver.sourceExts = sourceExts.filter((ext) => ext !== 'wasm');
 
-// Some setups still resolve `.wasm` as source; force the on-disk file when it exists.
+// @mediapipe/tasks-vision uses dynamic import(); load from CDN on web instead of bundling.
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (platform === 'web' && moduleName === '@mediapipe/tasks-vision') {
+    return {
+      type: 'sourceFile',
+      filePath: path.resolve(__dirname, 'src/shims/mediapipe-tasks-vision.web.js'),
+    };
+  }
   if (
     typeof moduleName === 'string' &&
     moduleName.endsWith('.wasm') &&
