@@ -47,7 +47,12 @@
       "expo-router",
       "expo-dev-client",
       "expo-sqlite",
-      "react-native-fast-tflite"
+      [
+        "react-native-mediapipe-posedetection",
+        {
+          "assetsPaths": ["./assets/models/"]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

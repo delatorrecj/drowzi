@@ -15,11 +15,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 
 import { mascotAssets } from '@/assets/images/mascot';
+import { ExercisePicker } from '@/src/features/alarm/ExercisePicker';
 import {
-  PHYSICAL_SETUP_CATEGORY,
+  PHYSICAL_EXERCISES,
   buildHabitConfigFromInputs,
+  getExerciseDefinition,
   normalizeAlarmTime,
 } from '@/src/features/alarm/alarmSetupShared';
+import type { ExerciseId } from '@/src/shared/types';
 import { alarmSetupScreenOptions, alarmSetupStyles as styles } from '@/src/features/alarm/alarmSetupStyles';
 import {
   clearAlarmSetupSkipFlags,
@@ -55,8 +58,10 @@ export default function OnboardingScreen() {
   const [nameInput, setNameInput] = useState('');
   const [timeInput, setTimeInput] = useState('06:30');
   const [repInput, setRepInput] = useState('10');
+  const [holdInput, setHoldInput] = useState('30');
+  const [exerciseId, setExerciseId] = useState<ExerciseId>('pushups');
 
-  const selectedCategory = PHYSICAL_SETUP_CATEGORY;
+  const selectedExercise = getExerciseDefinition(exerciseId);
 
   async function finishOnboardingSkip() {
     await clearSavedOnboardingScreen();
@@ -106,9 +111,9 @@ export default function OnboardingScreen() {
     void setSavedOnboardingScreen(2);
   }
 
-  const habitConfig = useMemo(
-    () => buildHabitConfigFromInputs(selectedCategory.habitType, repInput, '', ''),
-    [selectedCategory.habitType, repInput],
+  const built = useMemo(
+    () => buildHabitConfigFromInputs(exerciseId, repInput, holdInput),
+    [exerciseId, repInput, holdInput],
   );
 
   async function handleFinish() {
@@ -123,8 +128,8 @@ export default function OnboardingScreen() {
       userId: 'local-user',
       time,
       recurrence: { type: 'daily' as const },
-      habitType: selectedCategory.habitType,
-      habitConfig,
+      habitType: built.habitType,
+      habitConfig: built.habitConfig,
       isActive: true,
       createdAt: new Date().toISOString(),
     };
@@ -139,7 +144,7 @@ export default function OnboardingScreen() {
   }
 
   const headerTitle =
-    step === 0 ? 'Welcome' : step === 1 ? 'Your name' : 'Alarm & reps';
+    step === 0 ? 'Welcome' : step === 1 ? 'Your name' : 'Alarm & exercise';
 
   return (
     <SafeAreaView style={styles.flex} edges={['bottom']}>
@@ -196,8 +201,15 @@ export default function OnboardingScreen() {
           ) : (
             <View style={styles.block}>
               <Text style={styles.kicker}>Step 3 of 3</Text>
-              <Text style={styles.title}>When & how many reps</Text>
-              <Text style={styles.lede}>Motion-only · {selectedCategory.subtitle}</Text>
+              <Text style={styles.title}>When & what exercise</Text>
+              <Text style={styles.lede}>Pick an exercise — the camera verifies your form.</Text>
+
+              <Text style={styles.label}>Exercise</Text>
+              <ExercisePicker
+                exercises={PHYSICAL_EXERCISES}
+                selectedId={exerciseId}
+                onSelect={setExerciseId}
+              />
 
               <Text style={styles.label}>Wake time (24h)</Text>
               <TextInput
@@ -210,14 +222,29 @@ export default function OnboardingScreen() {
                 accessibilityLabel="Alarm time in 24 hour format"
               />
 
-              <Text style={styles.label}>Rep target</Text>
-              <TextInput
-                value={repInput}
-                onChangeText={setRepInput}
-                keyboardType="number-pad"
-                style={styles.input}
-                accessibilityLabel="Number of repetitions"
-              />
+              {selectedExercise.verificationMode === 'reps' ? (
+                <>
+                  <Text style={styles.label}>Rep target</Text>
+                  <TextInput
+                    value={repInput}
+                    onChangeText={setRepInput}
+                    keyboardType="number-pad"
+                    style={styles.input}
+                    accessibilityLabel="Number of repetitions"
+                  />
+                </>
+              ) : (
+                <>
+                  <Text style={styles.label}>Hold duration (seconds)</Text>
+                  <TextInput
+                    value={holdInput}
+                    onChangeText={setHoldInput}
+                    keyboardType="number-pad"
+                    style={styles.input}
+                    accessibilityLabel="Hold duration in seconds"
+                  />
+                </>
+              )}
             </View>
           )}
 

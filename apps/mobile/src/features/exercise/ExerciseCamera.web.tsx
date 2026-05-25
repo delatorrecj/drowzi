@@ -1,33 +1,15 @@
 import { createElement, useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import '@tensorflow/tfjs-backend-webgl';
-import * as tf from '@tensorflow/tfjs-core';
-import * as poseDetection from '@tensorflow-models/pose-detection';
-import type { Keypoint } from '@tensorflow-models/pose-detection';
 
-import { MOVENET_KEYPOINT } from '@/src/features/pushup/movenetTypes';
-import type { LeftArmChain } from '@/src/features/pushup/poseTypes';
+import { normalizeMediaPipePose } from '@/src/features/exercise/poseAdapter';
+import type { PoseLandmarks33 } from '@/src/features/exercise/landmarks';
+import {
+  loadMediaPipeVision,
+  type PoseLandmarkerInstance,
+} from '@/src/features/exercise/mediapipeWebLoader';
 
-const LOW_CONF = 0.25;
-
-function leftArmFromMoveNetKeypoints(keypoints: Keypoint[]): LeftArmChain | null {
-  const i = MOVENET_KEYPOINT;
-  const ls = keypoints[i.leftShoulder];
-  const le = keypoints[i.leftElbow];
-  const lw = keypoints[i.leftWrist];
-  if (!ls || !le || !lw) return null;
-  if ((ls.score ?? 0) < LOW_CONF || (le.score ?? 0) < LOW_CONF || (lw.score ?? 0) < LOW_CONF) {
-    return null;
-  }
-  return {
-    leftShoulder: { x: ls.x, y: ls.y, z: ls.z, visibility: ls.score },
-    leftElbow: { x: le.x, y: le.y, z: le.z, visibility: le.score },
-    leftWrist: { x: lw.x, y: lw.y, z: lw.z, visibility: lw.score },
-  };
-}
-
-export type WebCameraStatus =
+export type ExerciseCameraStatus =
   | 'idle'
   | 'loading_model'
   | 'requesting_camera'
@@ -38,26 +20,29 @@ export type WebCameraStatus =
 
 type Props = {
   active: boolean;
-  onLandmarks: (arm: LeftArmChain | null) => void;
-  onStatus?: (status: WebCameraStatus, detail?: string) => void;
+  onLandmarks: (landmarks: PoseLandmarks33 | null, trackingLost: boolean) => void;
+  onStatus?: (status: ExerciseCameraStatus, detail?: string) => void;
 };
 
+const WASM_BASE =
+  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm';
+const MODEL_URL =
+  'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task';
+
 /**
- * Browser webcam + MoveNet (TF.js) for push-up counting on web.
- * OpenCV is not used: 2D body pose is standard with MoveNet (same family as the native TFLite model).
- * The Kaggle “exercise recognition time series” dataset is IMU/sensor streams, not video—it is not
- * loaded at runtime; training from that data would be an offline pipeline, not in-app OpenCV.
+ * Browser webcam + MediaPipe Pose Landmarker (BlazePose 33-pt).
+ * MediaPipe is loaded from CDN — not bundled — to avoid Metro dynamic-import errors.
  */
-export function PushupWebCamera({ active, onLandmarks, onStatus }: Props) {
+export function ExerciseCamera({ active, onLandmarks, onStatus }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const detectorRef = useRef<poseDetection.PoseDetector | null>(null);
+  const landmarkerRef = useRef<PoseLandmarkerInstance | null>(null);
   const modelReadyRef = useRef(false);
   const busyRef = useRef(false);
   const [overlay, setOverlay] = useState<string | null>('Starting…');
   const [modelGen, setModelGen] = useState(0);
 
   const report = useCallback(
-    (status: WebCameraStatus, detail?: string) => {
+    (status: ExerciseCameraStatus, detail?: string) => {
       onStatus?.(status, detail);
     },
     [onStatus],
@@ -71,21 +56,24 @@ export function PushupWebCamera({ active, onLandmarks, onStatus }: Props) {
       try {
         report('loading_model');
         setOverlay('Loading pose model…');
-        await tf.ready();
-        await tf.setBackend('webgl');
-        await tf.ready();
-
-        const detector = await poseDetection.createDetector(
-          poseDetection.SupportedModels.MoveNet,
-          {
-            modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
+        const { FilesetResolver, PoseLandmarker } = await loadMediaPipeVision();
+        const vision = await FilesetResolver.forVisionTasks(WASM_BASE);
+        const landmarker = await PoseLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: MODEL_URL,
+            delegate: 'GPU',
           },
-        );
+          runningMode: 'VIDEO',
+          numPoses: 1,
+          minPoseDetectionConfidence: 0.5,
+          minPosePresenceConfidence: 0.5,
+          minTrackingConfidence: 0.5,
+        });
         if (cancelled) {
-          detector.dispose();
+          landmarker.close();
           return;
         }
-        detectorRef.current = detector;
+        landmarkerRef.current = landmarker;
         modelReadyRef.current = true;
         setModelGen((g) => g + 1);
         report('requesting_camera');
@@ -93,7 +81,7 @@ export function PushupWebCamera({ active, onLandmarks, onStatus }: Props) {
       } catch (e) {
         if (!cancelled) {
           report('model_failed', e instanceof Error ? e.message : String(e));
-          setOverlay('Could not load pose model. Use “Simulate one rep”.');
+          setOverlay('Could not load pose model. Use simulate below.');
         }
       }
     })();
@@ -101,8 +89,8 @@ export function PushupWebCamera({ active, onLandmarks, onStatus }: Props) {
     return () => {
       cancelled = true;
       modelReadyRef.current = false;
-      detectorRef.current?.dispose?.();
-      detectorRef.current = null;
+      landmarkerRef.current?.close();
+      landmarkerRef.current = null;
     };
   }, [active, report]);
 
@@ -165,28 +153,32 @@ export function PushupWebCamera({ active, onLandmarks, onStatus }: Props) {
 
     let stopped = false;
     let rafId = 0;
+    let lastVideoTime = -1;
 
     const loop = () => {
       if (stopped) return;
       rafId = requestAnimationFrame(loop);
       const video = videoRef.current;
-      const detector = detectorRef.current;
-      if (!video || !detector || busyRef.current || video.readyState < 2) return;
+      const landmarker = landmarkerRef.current;
+      if (!video || !landmarker || busyRef.current || video.readyState < 2) return;
+      if (video.currentTime === lastVideoTime) return;
+      lastVideoTime = video.currentTime;
       busyRef.current = true;
-      void (async () => {
-        try {
-          const poses = await detector.estimatePoses(video, {
-            maxPoses: 1,
-            flipHorizontal: true,
-          });
-          const arm = poses[0] ? leftArmFromMoveNetKeypoints(poses[0].keypoints) : null;
-          onLandmarks(arm);
-        } catch {
-          onLandmarks(null);
-        } finally {
-          busyRef.current = false;
-        }
-      })();
+      try {
+        const result = landmarker.detectForVideo(video, performance.now());
+        const raw = result.landmarks?.[0]?.map((lm) => ({
+          x: lm.x,
+          y: lm.y,
+          z: lm.z,
+          visibility: lm.visibility,
+        }));
+        const normalized = normalizeMediaPipePose(raw ?? null);
+        onLandmarks(normalized, !normalized);
+      } catch {
+        onLandmarks(null, true);
+      } finally {
+        busyRef.current = false;
+      }
     };
 
     rafId = requestAnimationFrame(loop);

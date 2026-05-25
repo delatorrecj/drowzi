@@ -13,16 +13,20 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 
+import { ExercisePicker } from '@/src/features/alarm/ExercisePicker';
 import {
-  PHYSICAL_SETUP_CATEGORY,
+  PHYSICAL_EXERCISES,
   buildHabitConfigFromInputs,
+  exerciseIdFromAlarmConfig,
+  getExerciseDefinition,
   normalizeAlarmTime,
+  targetInputFromAlarmConfig,
 } from '@/src/features/alarm/alarmSetupShared';
 import { alarmSetupScreenOptions, alarmSetupStyles as styles } from '@/src/features/alarm/alarmSetupStyles';
 import { getAlarmById, saveAlarm } from '@/src/platform/alarmStore';
 import { notifyIfSchedulingFailed } from '@/src/platform/schedulingFeedback';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
-import type { Alarm } from '@/src/shared/types';
+import type { Alarm, ExerciseId } from '@/src/shared/types';
 
 export default function AddAlarmScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -32,8 +36,10 @@ export default function AddAlarmScreen() {
   const [editing, setEditing] = useState<Alarm | null>(null);
   const [timeInput, setTimeInput] = useState('07:00');
   const [repInput, setRepInput] = useState('10');
+  const [holdInput, setHoldInput] = useState('30');
+  const [exerciseId, setExerciseId] = useState<ExerciseId>('pushups');
 
-  const selectedCategory = PHYSICAL_SETUP_CATEGORY;
+  const selectedExercise = getExerciseDefinition(exerciseId);
 
   useEffect(() => {
     if (!editId) return;
@@ -48,9 +54,11 @@ export default function AddAlarmScreen() {
       }
       setEditing(existing);
       setTimeInput(existing.time);
-      if (existing.habitType === 'motion' && 'repTarget' in existing.habitConfig) {
-        setRepInput(String(existing.habitConfig.repTarget));
-      }
+      const exId = exerciseIdFromAlarmConfig(existing.habitType, existing.habitConfig);
+      const targets = targetInputFromAlarmConfig(existing.habitType, existing.habitConfig);
+      setExerciseId(exId);
+      setRepInput(targets.repInput);
+      setHoldInput(targets.holdInput);
       setReady(true);
     })();
     return () => {
@@ -65,11 +73,13 @@ export default function AddAlarmScreen() {
       return;
     }
 
-    const useMotionFields = !editing || editing.habitType === 'motion';
-    const habitConfig = useMotionFields
-      ? buildHabitConfigFromInputs(selectedCategory.habitType, repInput, '', '')
-      : editing.habitConfig;
-    const habitType = useMotionFields ? selectedCategory.habitType : editing.habitType;
+    const usePhysicalFields =
+      !editing || editing.habitType === 'motion' || editing.habitType === 'pose';
+    const built = usePhysicalFields
+      ? buildHabitConfigFromInputs(exerciseId, repInput, holdInput)
+      : null;
+    const habitConfig = built?.habitConfig ?? editing!.habitConfig;
+    const habitType = built?.habitType ?? editing!.habitType;
 
     const { scheduling } = await saveAlarm({
       id: editing?.id ?? `alarm-${Date.now()}`,
@@ -116,9 +126,16 @@ export default function AddAlarmScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           <View style={styles.block}>
-            <Text style={styles.kicker}>Motion only</Text>
-            <Text style={styles.title}>Time & reps</Text>
-            <Text style={styles.lede}>{selectedCategory.subtitle}</Text>
+            <Text style={styles.kicker}>Physical habit</Text>
+            <Text style={styles.title}>Time & exercise</Text>
+            <Text style={styles.lede}>Camera verifies whichever exercise you pick.</Text>
+
+            <Text style={styles.label}>Exercise</Text>
+            <ExercisePicker
+              exercises={PHYSICAL_EXERCISES}
+              selectedId={exerciseId}
+              onSelect={setExerciseId}
+            />
 
             <Text style={styles.label}>Wake time (24h)</Text>
             <TextInput
@@ -130,13 +147,27 @@ export default function AddAlarmScreen() {
               style={styles.input}
             />
 
-            <Text style={styles.label}>Rep target</Text>
-            <TextInput
-              value={repInput}
-              onChangeText={setRepInput}
-              keyboardType="number-pad"
-              style={styles.input}
-            />
+            {selectedExercise.verificationMode === 'reps' ? (
+              <>
+                <Text style={styles.label}>Rep target</Text>
+                <TextInput
+                  value={repInput}
+                  onChangeText={setRepInput}
+                  keyboardType="number-pad"
+                  style={styles.input}
+                />
+              </>
+            ) : (
+              <>
+                <Text style={styles.label}>Hold duration (seconds)</Text>
+                <TextInput
+                  value={holdInput}
+                  onChangeText={setHoldInput}
+                  keyboardType="number-pad"
+                  style={styles.input}
+                />
+              </>
+            )}
           </View>
 
           <View style={styles.footer}>
