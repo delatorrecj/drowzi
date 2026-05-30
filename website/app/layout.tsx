@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, Inter } from "next/font/google";
+import { SITE } from "@/lib/constants";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -17,6 +18,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE.url),
   title: "Drowzi",
   description:
     "Drowzi is the habit-gated alarm app that uses your phone's camera, mic, and sensors to verify your morning routine. Not a puzzle. The habit is the off-switch.",

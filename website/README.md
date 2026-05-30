@@ -37,7 +37,9 @@ npm run build      # static export → out/
 
 ## Deploy
 
-Vercel auto-deploys on push to `main`. Set root directory to `website/` in Vercel project settings.
+Vercel auto-deploys on push to `main`. Production URL: https://drowzi-axon.vercel.app
+
+Either leave the Vercel **Root Directory** empty (repo root; uses root `vercel.json`) or set it to `website/` with the default Next.js preset.
 
 ## Before Launch
 

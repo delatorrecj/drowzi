@@ -1,7 +1,8 @@
 export const SITE = {
+  url: "https://drowzi-axon.vercel.app",
   appStoreUrl: "#download",   // replace with real App Store link
   playStoreUrl: "#download",  // replace with real Play Store link
-  githubUrl: "https://github.com/delatorrecj/drowzi",
+  githubUrl: "https://github.com/Troy-LL/drowzi",
   privacyUrl: "/privacy",
   demoUrl: "/demo",
 };

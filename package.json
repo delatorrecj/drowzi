@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "install:all": "npm install && cd apps/mobile && npm install && cd ../../website && npm install",
+    "install:website": "cd website && npm install",
+    "build:website": "cd website && npm run build",
     "dev:mobile": "cd apps/mobile && npm run web",
     "dev:web": "cd website && npm run dev",
     "dev": "concurrently \"npm run dev:mobile\" \"npm run dev:web\"",
