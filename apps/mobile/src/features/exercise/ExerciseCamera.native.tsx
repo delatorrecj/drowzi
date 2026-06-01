@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Camera, useCameraDevice } from 'react-native-vision-camera';
+import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 import {
   Delegate,
   RunningMode,
@@ -32,6 +32,7 @@ type Props = {
  * Native camera + MediaPipe Pose Landmarker (BlazePose 33-pt, same schema as ML Kit).
  */
 export function ExerciseCamera({ active, onLandmarks, onStatus }: Props) {
+  const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('front');
   const [overlay, setOverlay] = useState<string | null>('Starting…');
   const onLandmarksRef = useRef(onLandmarks);
@@ -89,6 +90,17 @@ export function ExerciseCamera({ active, onLandmarks, onStatus }: Props) {
 
   useEffect(() => {
     if (!active) return;
+    if (!hasPermission) {
+      report('requesting_camera');
+      setOverlay('Requesting camera permission…');
+      requestPermission().then((granted) => {
+        if (!granted) {
+          report('no_camera');
+          setOverlay('Camera permission denied.');
+        }
+      });
+      return;
+    }
     if (!device) {
       report('no_camera');
       setOverlay('Camera unavailable.');
@@ -96,15 +108,25 @@ export function ExerciseCamera({ active, onLandmarks, onStatus }: Props) {
     }
     report('running');
     setOverlay(null);
-  }, [active, device, report]);
+  }, [active, hasPermission, requestPermission, device, report]);
 
   if (!active) return null;
+
+  if (!hasPermission) {
+    return (
+      <View style={styles.wrap}>
+        <View style={styles.overlay}>
+          <Text style={styles.overlayText}>Camera permission is required to continue.</Text>
+        </View>
+      </View>
+    );
+  }
 
   if (!device) {
     return (
       <View style={styles.wrap}>
         <View style={styles.overlay}>
-          <Text style={styles.overlayText}>Camera permission denied or unavailable.</Text>
+          <Text style={styles.overlayText}>Camera unavailable.</Text>
         </View>
       </View>
     );

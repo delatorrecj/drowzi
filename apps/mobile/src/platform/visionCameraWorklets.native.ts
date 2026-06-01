@@ -1,1 +1,1 @@
-import 'react-native-vision-camera-worklets';
+import 'react-native-worklets-core';
