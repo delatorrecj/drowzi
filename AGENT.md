@@ -64,9 +64,9 @@ graph TD
 
 ### 🏗️ Phase 3: Technical Architecture & System Design
 *   **[sdd-drowzi.md](file:///C:/Users/User/CODERIST/drowzi/docs/sdd-drowzi.md)** (System Design Document)
-    *   *Purpose:* High-level engineering blueprints including the Expo (React Native) architecture, SQLite on-device storage, Supabase cloud sync strategy, and local security.
+    *   *Purpose:* High-level engineering blueprints including the Expo (React Native) architecture, SQLite and AsyncStorage on-device storage, and local security.
 *   **[dsd-drowzi.md](file:///C:/Users/User/CODERIST/drowzi/docs/dsd-drowzi.md)** (Database & State Schema Design)
-    *   *Purpose:* Physical database schemas for SQLite and Supabase, synchronization states, and streak calculation logic.
+    *   *Purpose:* Physical database schemas for local SQLite tables, AsyncStorage keys, and streak calculation logic.
 *   **[rfc-drowzi-habit-verification.md](file:///C:/Users/User/CODERIST/drowzi/docs/rfc-drowzi-habit-verification.md)** (Verification Engine RFC)
     *   *Purpose:* Detailed specification of how on-device sensor gating works (MediaPipe Pose detection for push-ups, Barcode scanner for coffee bags, Voice parsing for motivational speeches).
 
@@ -74,7 +74,7 @@ graph TD
 *   **[plan-dev-workflow-split.md](file:///C:/Users/User/CODERIST/drowzi/docs/plan-dev-workflow-split.md)** (Hackathon Scoping & Split)
     *   *Purpose:* Crucial hackathon roadmap that scales down the product scope to **strictly offline local persistence** (AsyncStorage, bypassing Supabase and auth) to ensure maximum focus on a working, single-session demo.
 *   **[qad-drowzi.md](file:///C:/Users/User/CODERIST/drowzi/docs/qad-drowzi.md)** (Quality Assurance & Test Matrix)
-    *   *Purpose:* Comprehensive integration testing suites, test plans for offline resilience, and edge case coverage (e.g. network drops mid-sync, app crashes mid-alarm).
+    *   *Purpose:* Comprehensive integration testing suites, test plans for offline resilience, and edge case coverage (e.g. app crashes mid-alarm).
 *   **[plan-website.md](file:///C:/Users/User/CODERIST/drowzi/docs/plan-website.md)** (Marketing Website Spec)
     *   *Purpose:* Next.js static informational landing page specifications for app downloads.
 
@@ -84,4 +84,4 @@ graph TD
 Drowzi is fundamentally designed to be **offline-first**. As an agent or developer working in this codebase:
 1.  **AI & Inference:** Keep pose models (`assets/models`) local. Do **not** query external cloud APIs for verification.
 2.  **Sensors:** Use device-level hardware APIs (`react-native-vision-camera`, `expo-notifications`).
-3.  **Resilience:** All logic should default to local SQLite/AsyncStorage writes first. Cloud synchronization (via Supabase) is eventually consistent and must only happen in the background when a secure connection becomes available.
+3.  **Resilience:** All data persists locally in SQLite and AsyncStorage. Cloud synchronization (via Supabase) is deferred to V2.

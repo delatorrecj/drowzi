@@ -5,25 +5,20 @@
 **Version:** 0.1
 **Owner:** delatorrecj
 **PRD:** [prd-drowzi.md](prd-drowzi.md)
-
----
-
 ## 1. Architectural Vision & Principles
 
-**Architecture style:** Expo (React Native) mobile client + Supabase BaaS (PostgreSQL + Auth + Realtime). Thin serverless edge functions for any server-side logic. No custom backend server in V1 — use Supabase's PostgREST and Edge Functions directly.
+**Architecture style:** Local-only Expo (React Native) mobile client. All data (alarms, completion logs, streaks) is persisted on-device using Expo SQLite and AsyncStorage. There is no cloud backend, user authentication, or server synchronization in V1.
 
 **Guiding principles:**
 
-- Offline-first alarm core: the alarm must fire and the habit gate must function with zero network connectivity. All sensor verification is on-device.
-- Server is for persistence only in V1: DB writes happen after habit completion to sync streak data. No server-side verification.
-- On-device ML over API calls: pose detection, barcode scanning, and voice recognition all use platform SDKs to avoid latency, cost, and privacy concerns.
-- Fail safe on alarm: if the app crashes during an active alarm, the system notification alarm (Expo Notifications) continues ringing. The habit gate is the app layer; the alarm is the OS layer.
+- Absolute offline capability: The app must function perfectly with zero network connectivity. All alarm scheduling, firing, and habit verification (such as camera pose detection) are executed locally.
+- On-device ML: ML inference (MediaPipe / Google ML Kit for pose detection) runs entirely on the device. No video frames, audio, or metadata leave the phone.
+- Fail-safe alarms: If the app is closed or crashed, background notification schedulers (Expo Notifications) manage alarm delivery. Reopening the app from a notification forces routing to the active habit gate.
 
 **Key trade-offs made:**
 
-- No custom backend server for V1 — Supabase handles all persistence; this limits complex server-side business logic but dramatically reduces infrastructure overhead for a solo build.
-- Voice recognition uses platform OS APIs (no Whisper/cloud ASR) — free and offline-capable but less accurate on accented speech; documented V1 limitation.
-- Streak sync is eventually consistent: offline completions sync when connectivity resumes. A local SQLite cache (via Expo SQLite) is the source of truth; Supabase is the backup/sync target.
+- Local-only storage: Eliminates cloud hosting costs, authentication complexity, and security risks. However, users will lose their streak history if they uninstall the app or switch devices.
+- Native capabilities & simulators: Focuses heavily on on-device sensors. On web/simulator builds, fallback simulation triggers are provided so that features can still be demoed and tested.
 
 ---
 
@@ -31,177 +26,151 @@
 
 ```mermaid
 graph TD
-    A[User Device - Expo / React Native] -->|Auth, Streak Sync| B[Supabase - PostgreSQL + Auth]
-    A -->|Alarm Scheduling| C[Expo Notifications - OS Alarm Layer]
-    A -->|Pose Detection| D[ML Kit / Vision Framework - On-Device]
-    A -->|Barcode Scan| E[ML Kit Barcode - On-Device]
-    A -->|Voice Recognition| F[iOS SpeechRecognizer / Android SpeechRecognizer - On-Device]
-    A -->|Offline Persistence| G[Expo SQLite - Local Cache]
-    G -->|Background Sync| B
-    B -->|Real-time Streak Sync| A
+    A[User Device - Expo / React Native] -->|Alarm Scheduling| C[Expo Notifications - OS Alarm Layer]
+    A -->|Pose Detection| D[ML Kit / MediaPipe - On-Device]
+    A -->|Barcode Scan| E[Barcode Scanner - Placeholder / Stub]
+    A -->|Voice Recognition| F[Speech Recognizer - Placeholder / Stub]
+    A -->|Offline Persistence| G[Expo SQLite - Local DB Cache]
+    A -->|Metadata & Streaks| H[AsyncStorage - Local Cache]
 ```
 
-
-
 **Layers:**
-
 
 | Layer             | Technology                                      | Responsibility                                                    |
 | ----------------- | ----------------------------------------------- | ----------------------------------------------------------------- |
 | Client            | Expo SDK 52, React Native 0.76, React 19        | All UI, alarm scheduling, sensor orchestration, on-device ML      |
-| Local Cache       | Expo SQLite                                     | Offline-first alarm configs, streak log, habit completion history |
-| BaaS / API        | Supabase (PostgREST)                            | User auth, cloud-persisted streak, alarm profiles (backup)        |
-| Compute (minimal) | Supabase Edge Functions (Deno)                  | Streak validation edge cases, push notification triggers          |
-| ML / Sensors      | Google ML Kit, Apple Vision, OS Speech APIs     | Pose detection, barcode scanning, voice recognition               |
-| Infrastructure    | Expo EAS (builds + OTA updates), Supabase cloud | Build pipeline, database hosting                                  |
-
+| Local Storage     | Expo SQLite & AsyncStorage                      | Offline-first alarm configs, streak calculations, habit completion history, onboarding state |
+| ML / Sensors      | Google ML Kit / MediaPipe (Pose)                | Pose detection (other gates are stubbed out as placeholders)      |
+| Infrastructure    | Expo EAS (builds + OTA updates)                 | Build pipeline and deployment distribution                        |
 
 ---
 
 ## 3. Data Architecture
 
-**Primary database:** PostgreSQL via Supabase — *reason: Supabase provides hosted Postgres with built-in auth, RLS, PostgREST API, and real-time subscriptions. Eliminates need for a custom API server.*
-**Secondary / cache:** Expo SQLite (on-device) — *reason: Offline-first alarm and streak data. Never fails due to network issues.*
+**Primary database:** Expo SQLite (on-device) — *reason: Offline-first alarm and streak data. Never fails due to network issues.*
+**Secondary / metadata store:** AsyncStorage (on-device) — *reason: Lightweight configuration metadata (like display name, onboarding progress, recent habit logs) cache.*
 **Vector store:** N/A — no RAG or embedding features in V1.
 
-**Core entities:**
+**Core entities (AsyncStorage):**
 
+```typescript
+interface Alarm {
+  id: string;
+  time: string;           // HH:MM format
+  days: number[];         // Recurrence days (0-6)
+  habitType: 'motion' | 'barcode' | 'voice' | 'pose' | 'meditation';
+  habitConfig: Record<string, any>;
+  isActive: boolean;
+  label?: string;
+}
+
+interface StoredLog {
+  id: string;
+  alarmId: string;
+  habitType: string;
+  success: boolean;
+  method: 'verified' | 'fallback_timer' | 'force_closed';
+  localDate: string;      // YYYY-MM-DD
+  completedAt: string;    // ISO8601 string
+}
 ```
-users
-  id:              UUID (Supabase auth.users foreign key)
-  created_at:      TIMESTAMPTZ
-  display_name:    TEXT
-  mascot_level:    INTEGER DEFAULT 0
 
-alarms
-  id:              UUID PRIMARY KEY
-  user_id:         UUID REFERENCES users(id)
-  time:            TIME (HH:MM)
-  recurrence:      JSONB (e.g., {"type": "weekly", "days": [1,2,3,4,5]})
-  habit_type:      TEXT CHECK (habit_type IN ('motion', 'barcode', 'voice', 'pose', 'meditation'))
-  habit_config:    JSONB (type-specific config: rep_target, barcode_value, passage_text, etc.)
-  is_active:       BOOLEAN DEFAULT true
-  created_at:      TIMESTAMPTZ DEFAULT now()
+**Core entities (SQLite):**
 
-habit_logs
-  id:              UUID PRIMARY KEY
-  user_id:         UUID REFERENCES users(id)
-  alarm_id:        UUID REFERENCES alarms(id)
-  completed_at:    TIMESTAMPTZ
-  habit_type:      TEXT
-  success:         BOOLEAN
-  method:          TEXT CHECK (method IN ('verified', 'fallback_timer', 'force_closed'))
-  local_date:      DATE (user's local date, for streak calculation)
+```sql
+CREATE TABLE IF NOT EXISTS habit_config (
+  alarm_id TEXT PRIMARY KEY NOT NULL,
+  habit_type TEXT NOT NULL,
+  rep_target INTEGER NOT NULL,
+  updated_at TEXT NOT NULL
+);
 
-streaks
-  id:              UUID PRIMARY KEY
-  user_id:         UUID REFERENCES users(id)
-  current_streak:  INTEGER DEFAULT 0
-  longest_streak:  INTEGER DEFAULT 0
-  last_active_date: DATE
-  updated_at:      TIMESTAMPTZ DEFAULT now()
+CREATE TABLE IF NOT EXISTS habit_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  alarm_id TEXT NOT NULL,
+  habit_type TEXT NOT NULL,
+  success INTEGER NOT NULL,
+  method TEXT NOT NULL,
+  local_date TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
 ```
 
 **Key relationships:**
+- An Alarm has zero or more associated `habit_logs` records (identified by `alarm_id`).
+- Streak calculation is performed dynamically by parsing the list of successful local `StoredLog` records.
 
-- User has many Alarms (1:N)
-- User has one Streak record (1:1)
-- Alarm has many HabitLogs (1:N)
-- HabitLog belongs to one Alarm and one User
-
-**Caching strategy:**
-
-- Expo SQLite: all alarms and habit_logs mirrored locally. Alarms are read from local DB at alarm fire time — zero network dependency.
-- Supabase sync: habit_logs written to local DB immediately; synced to Supabase on next network connection via background sync job.
-- Streak computed locally from local habit_logs; reconciled with Supabase streaks table on app foreground.
+**Persistence Strategy:**
+- All data is local. SQLite is used to store habit configurations and logs for high-reliability structured querying.
+- AsyncStorage is used to store onboarding flags, basic user profile metadata (like display name), active Alarm settings, and dynamic history logs.
 
 ---
 
 ## 4. API Design & External Integrations
 
-**API style:** Supabase PostgREST (auto-generated REST from schema) + Supabase Edge Functions for complex operations. React Native client uses `@supabase/supabase-js`.
+**API style:** Local-only library APIs. There is no remote network API or server interface in V1.
 
-**Internal endpoints (high-level):**
+**Internal Service APIs:**
 
-
-| Method | Path                               | Purpose                                          |
-| ------ | ---------------------------------- | ------------------------------------------------ |
-| `POST` | `/auth/signup`                     | Create user account (Supabase Auth)              |
-| `POST` | `/auth/login`                      | Email + password login (Supabase Auth)           |
-| `GET`  | `/rest/v1/alarms?user_id=eq.{id}`  | Fetch all alarms for user                        |
-| `POST` | `/rest/v1/alarms`                  | Create or update alarm                           |
-| `POST` | `/rest/v1/habit_logs`              | Log a habit completion event                     |
-| `GET`  | `/rest/v1/streaks?user_id=eq.{id}` | Fetch current streak                             |
-| `POST` | `/functions/v1/recalculate-streak` | Server-side streak recalculation (Edge Function) |
-
+| Module | Location | Purpose |
+| --- | --- | --- |
+| `alarmStore` | `src/platform/alarmStore.ts` | Handles local persistence (AsyncStorage) for adding, updating, and deleting Alarm profiles. |
+| `alarmScheduler` | `src/platform/alarmScheduler.ts` | Integrates with `expo-notifications` to schedule and cancel OS-level alarms. |
+| `recordCompletion` | `src/platform/recordCompletion.ts` | Records successful habit completions in AsyncStorage and calculates streak counters dynamically. |
+| `habitSqlite` | `src/platform/habitSqlite.ts` | Provides structured SQLite tables for storing fine-grained configuration and logs. |
 
 **External integrations:**
 
-
-| Service                      | Purpose                                | Rate Limits / Fallback                                                                |
-| ---------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
-| Supabase Auth                | User identity, session management      | Built-in; on auth failure, app works offline with local session                       |
-| Supabase PostgREST           | Streak + alarm persistence             | On 5xx, queue writes locally; retry on next foreground                                |
-| Google ML Kit (Pose)         | On-device push-up/pose detection       | On model load failure → fallback to gyroscope timer gate                              |
-| Google ML Kit (Barcode)      | On-device barcode scanning             | On failure → prompt user to re-scan                                                   |
-| iOS/Android SpeechRecognizer | Voice gate recognition                 | On recognition failure → reset and re-listen; 3 retries before fallback timer gate    |
-| Expo Notifications           | OS-level alarm scheduling and delivery | Alarm fires via OS; if notification permission revoked → in-app reminder to re-enable |
-| Expo EAS                     | Build and OTA update delivery          | Fallback: standard App Store/Play Store update                                        |
-
+| Service | Purpose | Fallback |
+| --- | --- | --- |
+| Google ML Kit / MediaPipe | On-device pose detection for verification | Gyroscope-based shaking or manual countdown fallback timer |
+| Expo Notifications | OS-level notification triggers for background alarms | In-app notification dispatcher fallback if permission is revoked |
+| Expo EAS | App bundle builds and OTA updates | App Store / Google Play manual updates |
 
 ---
 
 ## 5. Security & Authorization
 
-**Authentication:** Supabase Auth — email + password (V1). OAuth (Google/Apple) deferred to V2.
-**Session management:** Supabase JWT, stored in Expo SecureStore (encrypted device keychain). Session auto-refreshed; expires after 7 days of inactivity.
-**Authorization model:** Row Level Security (RLS) on all Supabase tables. Policy: `auth.uid() = user_id` on alarms, habit_logs, and streaks. Users can only read and write their own data.
+**Authentication:** None. The app operates entirely in a local anonymous user context in V1.
+
+**Session management:** N/A.
+
+**Authorization model:** N/A.
 
 **Data protection:**
-
-- PII encrypted at rest: Yes — Supabase (AWS-hosted) provides AES-256 at rest
-- On-device: session token stored in Expo SecureStore (not AsyncStorage)
-- Secrets management: Supabase anon key + project URL in `.env`; never committed. EAS secrets for build-time vars.
-- Input validation: Zod schemas on all form inputs; habit_config JSONB validated client-side before upsert
-- Camera/mic data: frames and audio are processed on-device only; never transmitted to any server
+- PII and local settings are cached in AsyncStorage.
+- Sensitive credentials or tokens are stored in Expo SecureStore (if needed).
+- Zod schemas are used for input validation on form submittals before writing to database stores.
+- Camera frames processed during habit verification are loaded entirely in volatile memory and destroyed immediately. No image/video data is saved to disk or transmitted over the network.
 
 ---
 
 ## 6. Infrastructure, CI/CD & Deployment
 
-**Hosting:** Expo EAS (iOS + Android builds, OTA updates), Supabase cloud (managed Postgres + Auth + Edge Functions)
+**Hosting:** N/A (Client-only mobile app).
 
 **Environments:**
-
-- `dev`: Local Expo Go / Expo dev build; Supabase local instance via Supabase CLI (`supabase start`)
-- `staging`: EAS Preview build (internal distribution); Supabase staging project
-- `prod`: EAS Production build (App Store + Play Store); Supabase production project
+- `dev`: Local Expo Go or local Expo development builds.
+- `prod`: EAS Production build distributed via Apple App Store and Google Play Store.
 
 **CI/CD:**
 GitHub Actions pipeline:
-
 1. `lint` — ESLint + Prettier check
 2. `typecheck` — `tsc --noEmit`
-3. `test` — Jest unit + integration tests
-4. On `main` merge → EAS Preview build triggered (staging)
-5. On `release/`* tag → EAS Production build + submission to App Store / Play Store
+3. `test` — Jest unit tests for storage modules, streak calculator, and state hooks.
+4. EAS build trigger on release tags.
 
 ---
 
 ## 7. Non-Functional Requirements
 
-
-| Requirement                       | Target                                                           | Notes                                                              |
-| --------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Alarm fire accuracy               | ±30 seconds of scheduled time                                    | Expo Notifications + OS scheduler; subject to Doze mode on Android |
-| Habit gate latency (pose/barcode) | <100ms per frame                                                 | On-device ML; mid-range device baseline (Snapdragon 720G, A15)     |
-| Voice recognition response        | <2s after speech ends                                            | Platform ASR; network-independent                                  |
-| DB sync (habit log to Supabase)   | <3s on Wi-Fi / LTE                                               | Background sync after habit completion                             |
-| App cold start to alarm home      | <1.5s                                                            | React Native bundle optimization; Hermes engine                    |
-| Uptime (Supabase)                 | 99.9%                                                            | Supabase SLA; app is fully functional offline                      |
-| Max concurrent users V1           | 1,000                                                            | Supabase free/pro tier handles this; scale up if exceeded          |
-| Data retention                    | User data retained indefinitely; raw habit_logs retained 2 years | Compliance with app store privacy requirements                     |
-
+| Requirement | Target | Notes |
+| --- | --- | --- |
+| Alarm fire accuracy | ±30 seconds of scheduled time | Expo Notifications + OS alarm scheduler; subject to background restrictions |
+| Habit gate latency (pose) | <100ms per frame | On-device ML inference on mid-range devices |
+| SQLite query latency | <50ms | Basic on-device index lookup queries |
+| App cold start to alarm home | <1.5s | Hermes engine bundle optimizations |
+| Data retention | Indefinite (local-only) | Persisted until the user uninstalls the app or clears app data |
 
 ---
 
@@ -238,7 +207,7 @@ GitHub Actions pipeline:
 | Operation          | Est. tokens          | Est. cost                 | Monthly budget assumption               |
 | ------------------ | -------------------- | ------------------------- | --------------------------------------- |
 | All ML inference   | N/A (on-device)      | $0                        | No per-operation cloud cost             |
-| Supabase DB writes | N/A (row operations) | ~$0 on free tier (<500MB) | Free tier sufficient for V1 user volume |
+| Local data writes  | N/A (local SQLite)   | $0                        | Free. Client device storage only.       |
 
 
 **Fallback behavior:** If ML Kit fails to initialize (unsupported device, corrupted model): fall back to a gyroscope-based motion timer (device shaking for rep count) or a countdown timer (pose hold). Surface a "limited mode" banner. Log the fallback.

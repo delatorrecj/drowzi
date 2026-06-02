@@ -112,6 +112,8 @@ Acceptance Criteria:
 
 ## 6. Out of Scope for This Release
 
+- Cloud synchronization, user authentication, and online account persistence (Supabase) — deferred to v2
+- Real on-device barcode scanning and voice/speech recognition gates — stubs / placeholders in V1, fully deferred to v2
 - Social leaderboards and friend challenges — deferred to v2
 - Paid subscription tier and premium habit gates — deferred to v2
 - Apple Watch / wearable integration — deferred to v2
@@ -153,16 +155,15 @@ On-device only — $0 per operation. No external API costs for pose detection.
 
 **Dependencies:**
 - Expo / React Native (cross-platform mobile framework)
-- Google ML Kit (on-device pose detection, barcode scanning)
-- React Native Voice or Expo Speech (voice recognition via platform OS — iOS SpeechRecognition, Android SpeechRecognizer)
-- Supabase (user auth, streak and habit log persistence)
+- Google ML Kit / on-device MediaPipe (pose detection)
+- Expo SQLite & AsyncStorage (local persistence of alarms, logs, and streaks)
 - Expo Notifications (foreground and background alarm delivery)
 - App Store Connect account + Google Play Console account
 
 **Assumptions:**
-- Users will grant microphone, camera, and notification permissions on first use; onboarding will explain why these are needed
+- Users will grant camera and notification permissions on first use; onboarding will explain why these are needed
 - Target devices are iOS 16+ and Android 12+; no support for older OS versions in V1
-- Users have internet connectivity for account creation and streak sync; alarm functionality (firing + sensor verification) must work fully offline
+- The app operates entirely offline and requires zero network connectivity; all data is cached locally on the device
 - Mascot pixel art will be created by the owner; not generated procedurally in V1
 
 ---
@@ -171,8 +172,8 @@ On-device only — $0 per operation. No external API costs for pose detection.
 
 | Milestone | Deliverable | Target Date |
 |-----------|-------------|-------------|
-| M0 | Repo scaffolded, Expo project running, Supabase project linked, CI passing | Week 1 |
-| M1 | Core alarm engine working: alarm fires, at least one habit gate (motion) verified end-to-end, streak logs to DB | Week 4 |
+| M0 | Repo scaffolded, Expo project running, local SQLite schema configured, CI passing | Week 1 |
+| M1 | Core alarm engine working: alarm fires, at least one habit gate (motion) verified end-to-end, streak logs saved locally | Week 4 |
 | M2 | All 3 must-have habit gates implemented (motion, barcode, voice); onboarding complete; mascot base state rendered | Week 7 |
 | M3 | Should-Have features (pose gate, streak history, mascot evolution); QA sign-off; staging build | Week 10 |
 | Launch | App Store + Play Store submission; QAD passed; GTM assets live | Week 12 |

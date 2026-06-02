@@ -40,35 +40,38 @@ The engine is deliberately separated from the UI — the React component only di
 - Add sensor modules: `MotionSensorModule`, `BarcodeScanModule`, `VoiceRecognitionModule`, `PoseSensorModule` (each in `src/engine/sensors/`)
 - Add `useHabitGate` React hook consuming the engine's event emitter (`src/hooks/useHabitGate.ts`)
 - Add `AlarmGateScreen` component that renders exclusively from `useHabitGate` state (`src/screens/AlarmGateScreen.tsx`)
-- Add local `HabitLog` write via Expo SQLite immediately on gate success; queue Supabase sync
+- Add local `HabitLog` write via Expo SQLite immediately on gate success; update AsyncStorage streak cache
 
 ---
 
 ## 3. Technical Details & Contracts
 
 ### Data Model Changes
-
 ```sql
--- No new tables required. habit_logs table is defined in SDD.
--- Engine writes to local SQLite habit_logs on completion, then syncs to Supabase.
+-- habit_config (local SQLite configuration):
+CREATE TABLE IF NOT EXISTS habit_config (
+  alarm_id TEXT PRIMARY KEY NOT NULL,
+  habit_type TEXT NOT NULL,
+  rep_target INTEGER NOT NULL,
+  updated_at TEXT NOT NULL
+);
 
--- habit_logs (local SQLite mirror):
+-- habit_logs (local SQLite completion logs):
 CREATE TABLE IF NOT EXISTS habit_logs (
-  id              TEXT PRIMARY KEY,           -- UUID generated client-side
-  user_id         TEXT NOT NULL,
-  alarm_id        TEXT NOT NULL,
-  completed_at    TEXT NOT NULL,              -- ISO8601 timestamp
-  habit_type      TEXT NOT NULL,
-  success         INTEGER NOT NULL DEFAULT 1, -- 1 = true, 0 = false
-  method          TEXT NOT NULL,              -- 'verified' | 'fallback_timer' | 'force_closed'
-  local_date      TEXT NOT NULL,              -- YYYY-MM-DD in user's local timezone
-  synced          INTEGER NOT NULL DEFAULT 0  -- 0 = pending sync, 1 = synced to Supabase
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  alarm_id TEXT NOT NULL,
+  habit_type TEXT NOT NULL,
+  success INTEGER NOT NULL,
+  method TEXT NOT NULL,
+  local_date TEXT NOT NULL,
+  created_at TEXT NOT NULL
 );
 ```
 
 ### API Changes
 
-The engine is entirely client-side. No new HTTP endpoints. The only external write is the existing Supabase `habit_logs` upsert via `@supabase/supabase-js` after local SQLite write.
+The engine is entirely client-side. No network endpoints are used. All updates are written locally to the SQLite DB and AsyncStorage.
+
 
 ```typescript
 // HabitGateEngine public interface
@@ -156,26 +159,24 @@ The `useHabitGate` React hook subscribes to the engine and exposes `{ phase, pro
 **Token budget for this feature:** $0 — on-device ML, no tokens consumed.
 
 ---
-
 ## 6. Security, Privacy & Performance
 
 **Security surface:**
-- Camera and microphone activated only within the explicit alarm gate screen; React Navigation prevents accidental navigation into the screen
-- No camera frames or audio leave the device under any circumstances
-- `HabitConfig.barcodeConfig.registeredBarcode` is stored in local SQLite and Supabase with RLS; never exposed in logs
-- Force-close bypass (user kills the app during active alarm): OS-level Expo Notification alarm continues ringing until explicitly dismissed via the app's notification action — this surfaces the habit gate screen again
+- Camera and microphone activated only within the explicit alarm gate screen; React Navigation prevents accidental navigation into the screen.
+- No camera frames or audio leave the device under any circumstances.
+- `HabitConfig.barcodeConfig.registeredBarcode` is stored locally in SQLite / AsyncStorage; never exposed in logs.
+- Force-close bypass (user kills the app during active alarm): OS-level Expo Notification alarm continues ringing until explicitly dismissed via the app's notification action — this surfaces the habit gate screen again.
 
 **Performance:**
-- ML Kit Pose Detection target: <100ms inference per frame at 15fps on Snapdragon 720G / A15 Bionic
-- Camera preview frames: downscaled to 480×640 before ML inference to reduce memory pressure
-- Voice recognition: platform ASR streams incrementally; UI shows live transcript so user sees progress
-- Barcode scan: single-frame detection; no streaming required; camera closes immediately on successful scan
+- ML Kit Pose Detection target: <100ms inference per frame at 15fps on Snapdragon 720G / A15 Bionic.
+- Camera preview frames: downscaled to 480×640 before ML inference to reduce memory pressure.
+- Voice recognition: platform ASR streams incrementally; UI shows live transcript so user sees progress.
+- Barcode scan: single-frame detection; no streaming required; camera closes immediately on successful scan.
 
 **Privacy:**
-- Camera and mic data: processed in RAM; never written to disk, never transmitted
-- User-registered barcodes: stored locally + in Supabase user row (encrypted at rest); no third-party sharing
-- Habit completion logs: stored in Supabase under RLS; user can delete via Settings > Data in V2
-
+- Camera and mic data: processed in RAM; never written to disk, never transmitted.
+- User-registered barcodes: stored locally only; no third-party sharing.
+- Habit completion logs: stored locally on the device (SQLite); user can clear logs through in-app settings.
 ---
 
 ## 7. Execution Plan
@@ -193,7 +194,7 @@ The `useHabitGate` React hook subscribes to the engine and exposes `{ phase, pro
 | `DRW-05` | Implement `PoseSensorModule` (ML Kit Pose → hold timer with confidence gate) | M |
 | `DRW-06` | Implement fallback mode (gyroscope shaking counter + countdown timer) | S |
 | `DRW-07` | Build `useHabitGate` hook + `AlarmGateScreen` UI | M |
-| `DRW-08` | Local SQLite habit_log write + Supabase sync queue on gate complete | S |
+| `DRW-08` | Local SQLite habit_log write + AsyncStorage updates on gate complete | S |
 | `DRW-09` | Unit tests for engine state machine and sensor modules (mocked sensors) | M |
 | `DRW-10` | Device integration test: all 4 gates end-to-end on iOS + Android | L |
 
