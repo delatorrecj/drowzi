@@ -11,7 +11,25 @@ export type Recurrence =
   | { type: 'once'; date: string }
   | { type: 'weekly'; days: number[] };
 
-export type MotionHabitConfig = { configVersion: 1; repTarget: number };
+export type MotionExerciseId = 'pushups' | 'squats' | 'jumping_jacks';
+
+export type PoseExerciseId = 'warrior_i';
+
+export type ExerciseId = MotionExerciseId | PoseExerciseId;
+
+export type MotionHabitConfigV1 = { configVersion: 1; repTarget: number };
+
+export type MotionHabitConfig = {
+  configVersion: 2;
+  exerciseId: MotionExerciseId;
+  repTarget: number;
+};
+
+export type PoseHabitConfig = {
+  configVersion: 2;
+  exerciseId: PoseExerciseId;
+  holdDurationSeconds: number;
+};
 
 export type BarcodeHabitConfig = { configVersion: 1; barcodeValue: string };
 
@@ -19,7 +37,13 @@ export type VoiceHabitConfig = { configVersion: 1; passageText: string };
 
 export type PlaceholderHabitConfig = { configVersion: 1; note?: string };
 
-export type HabitConfig = MotionHabitConfig | BarcodeHabitConfig | VoiceHabitConfig | PlaceholderHabitConfig;
+export type HabitConfig =
+  | MotionHabitConfigV1
+  | MotionHabitConfig
+  | PoseHabitConfig
+  | BarcodeHabitConfig
+  | VoiceHabitConfig
+  | PlaceholderHabitConfig;
 
 export type Alarm = {
   id: string;

@@ -16,11 +16,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 
 import { mascotAssets } from '@/assets/images/mascot';
+import { ExercisePicker } from '@/src/features/alarm/ExercisePicker';
 import {
-  PHYSICAL_SETUP_CATEGORY,
+  PHYSICAL_EXERCISES,
   buildHabitConfigFromInputs,
+  buildLegacyHabitConfigFromInputs,
+  getExerciseDefinition,
   normalizeAlarmTime,
 } from '@/src/features/alarm/alarmSetupShared';
+import type { ExerciseId, HabitType, HabitConfig } from '@/src/shared/types';
 import { alarmSetupScreenOptions, alarmSetupStyles as styles } from '@/src/features/alarm/alarmSetupStyles';
 import {
   clearAlarmSetupSkipFlags,
@@ -98,7 +102,10 @@ export default function OnboardingScreen() {
   const [nameInput, setNameInput] = useState('');
   const [timeInput, setTimeInput] = useState('06:30');
   const [repInput, setRepInput] = useState('10');
+  const [holdInput, setHoldInput] = useState('30');
+  const [exerciseId, setExerciseId] = useState<ExerciseId>('pushups');
 
+  const selectedExercise = getExerciseDefinition(exerciseId);
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -113,12 +120,28 @@ export default function OnboardingScreen() {
 
   function goBackStep() {
     ignoreLateRestoreRef.current = true;
-    setStep((prev) => prev - 1);
+    setStep((prev) => {
+      const next = prev - 1;
+      if (next === 1 || next === 2) {
+        void setSavedOnboardingScreen(next);
+      } else {
+        void clearSavedOnboardingScreen();
+      }
+      return next;
+    });
   }
 
   function goNextStep() {
     ignoreLateRestoreRef.current = true;
-    setStep((prev) => prev + 1);
+    setStep((prev) => {
+      const next = prev + 1;
+      if (next === 1 || next === 2) {
+        void setSavedOnboardingScreen(next);
+      } else {
+        void clearSavedOnboardingScreen();
+      }
+      return next;
+    });
   }
 
   async function finishOnboardingSkip() {
@@ -129,10 +152,14 @@ export default function OnboardingScreen() {
     router.replace('/(tabs)');
   }
 
-  const habitConfig = useMemo(() => {
-    const habitType = rootCause === 'physical' ? 'motion' : rootCause === 'mental' ? 'voice' : 'barcode';
-    return buildHabitConfigFromInputs(habitType, repInput, 'Coffee Bag', 'Scan your coffee bag');
-  }, [rootCause, repInput]);
+  const habitConfigResult = useMemo<{ habitType: HabitType; habitConfig: HabitConfig }>(() => {
+    if (rootCause === 'physical') {
+      return buildHabitConfigFromInputs(exerciseId, repInput, holdInput);
+    }
+    const habitType: HabitType = rootCause === 'mental' ? 'voice' : 'barcode';
+    const config = buildLegacyHabitConfigFromInputs(habitType, repInput, 'Coffee Bag', 'Scan your coffee bag');
+    return { habitType, habitConfig: config };
+  }, [rootCause, exerciseId, repInput, holdInput]);
 
   async function handleFinish() {
     const time = normalizeAlarmTime(timeInput);
@@ -148,8 +175,8 @@ export default function OnboardingScreen() {
       userId: 'local-user',
       time,
       recurrence: { type: 'daily' as const },
-      habitType: habitType as any,
-      habitConfig,
+      habitType: habitConfigResult.habitType,
+      habitConfig: habitConfigResult.habitConfig,
       isActive: true,
       createdAt: new Date().toISOString(),
     };
@@ -169,12 +196,17 @@ export default function OnboardingScreen() {
         return (
           <View style={styles.block}>
             <Text style={styles.kicker}>Meet Drowzi</Text>
-            <View style={onboardingStyles.mascotContainer}>
-              <Image source={mascotAssets.thinking} style={onboardingStyles.mascotImage} resizeMode="contain" />
-            </View>
+            <Video
+              source={mascotAssets.intro}
+              style={onboardingStyles.video}
+              resizeMode={ResizeMode.COVER}
+              shouldPlay
+              isLooping
+              isMuted
+            />
             <Text style={styles.hero}>Grogginess loses. Your habit wins.</Text>
             <Text style={styles.body}>
-              Drowzi is the only alarm that doesn't stop until you do your habit. 
+              Drowzi is the only alarm that doesn't stop until you do your habit.
               Verified by your phone's sensors.
             </Text>
             <Text style={styles.bodyMuted}>Let's calibrate your experience.</Text>
@@ -256,26 +288,55 @@ export default function OnboardingScreen() {
               placeholder="Alex"
               placeholderTextColor={dashboardTheme.placeholderMuted}
               style={styles.input}
+              autoCapitalize="words"
+              autoCorrect={false}
+              maxLength={48}
+              accessibilityLabel="Your display name"
             />
 
             <Text style={styles.label}>First Alarm Time (24h)</Text>
             <TextInput
               value={timeInput}
               onChangeText={setTimeInput}
+              keyboardType="numbers-and-punctuation"
               placeholder="06:30"
               placeholderTextColor={dashboardTheme.placeholderMuted}
               style={styles.input}
+              accessibilityLabel="Alarm time in 24 hour format"
             />
 
             {rootCause === 'physical' && (
               <>
-                <Text style={styles.label}>Push-up Reps</Text>
-                <TextInput
-                  value={repInput}
-                  onChangeText={setRepInput}
-                  keyboardType="number-pad"
-                  style={styles.input}
+                <Text style={styles.label}>Exercise</Text>
+                <ExercisePicker
+                  exercises={PHYSICAL_EXERCISES}
+                  selectedId={exerciseId}
+                  onSelect={setExerciseId}
                 />
+
+                {selectedExercise.verificationMode === 'reps' ? (
+                  <>
+                    <Text style={styles.label}>Rep target</Text>
+                    <TextInput
+                      value={repInput}
+                      onChangeText={setRepInput}
+                      keyboardType="number-pad"
+                      style={styles.input}
+                      accessibilityLabel="Number of repetitions"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.label}>Hold duration (seconds)</Text>
+                    <TextInput
+                      value={holdInput}
+                      onChangeText={setHoldInput}
+                      keyboardType="number-pad"
+                      style={styles.input}
+                      accessibilityLabel="Hold duration in seconds"
+                    />
+                  </>
+                )}
               </>
             )}
 
@@ -321,7 +382,6 @@ export default function OnboardingScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
-          
           {renderStep()}
 
           <View style={styles.footer}>

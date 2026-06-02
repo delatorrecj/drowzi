@@ -18,6 +18,7 @@ import type { Alarm } from '@/src/shared/types';
 import { palette } from '@/src/shared/theme';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
 import { DashboardMascotPlaceholder } from '@/src/features/dashboard/DashboardMascotPlaceholder';
+import type { MascotMood } from '@/assets/images/mascot';
 import { deleteAlarm, getAlarms } from '@/src/platform/alarmStore';
 import {
   formatNextAlarmRingSummary,

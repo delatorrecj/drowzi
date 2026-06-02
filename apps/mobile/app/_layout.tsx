@@ -11,6 +11,9 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { alarmSetupScreenOptions } from '@/src/features/alarm/alarmSetupStyles';
 import { useAlarmNotificationResponse } from '@/src/platform/useAlarmNotificationResponse';
 import { fonts, loadAppFonts } from '@/src/shared/theme';
+import '@/src/platform/visionCameraWorklets';
+
+import { ensureHabitSchema } from '@/src/platform/habitSqlite';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -57,6 +60,10 @@ const navigationFonts = {
 
 function RootLayoutNav() {
   useAlarmNotificationResponse();
+
+  useEffect(() => {
+    void ensureHabitSchema();
+  }, []);
 
   const colorScheme = useColorScheme();
   const base = colorScheme === 'dark' ? DarkTheme : DefaultTheme;

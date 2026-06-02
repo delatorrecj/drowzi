@@ -120,8 +120,8 @@ Every morning you hit snooze, you're already losing. Drowzi is the alarm app tha
 | Metric | Target | How to Measure |
 |--------|--------|----------------|
 | App installs | 5,000 | App Store Connect + Google Play Console |
-| D7 retention | ≥35% | Users who open app on day 7 after install — Supabase + analytics event |
-| D30 retention | ≥20% | Users who open app on day 30 — Supabase event log |
+| D7 retention | ≥35% | Users who open app on day 7 after install — App Store Connect / Google Play analytics |
+| D30 retention | ≥20% | Users who open app on day 30 — App Store Connect / Google Play analytics |
 | Habit completion rate | ≥75% | `habit_logs.method = 'verified'` / total `habit_logs` |
 | App Store rating | ≥4.3 stars | App Store Connect |
 | Pro conversion rate | ≥2% of active users | RevenueCat dashboard |
@@ -135,7 +135,7 @@ Every morning you hit snooze, you're already losing. Drowzi is the alarm app tha
 - [x] Section 3 pricing has a clear gate (single alarm profile on free → multiple on Pro)
 - [x] Section 5 content assets are enumerated and all need to be created before launch
 - [x] Section 6 has binary criteria for moving between phases
-- [x] Section 7 metrics are measurable on day 1 — tracking plan implicit in Supabase event log and App Store analytics
+- [x] Section 7 metrics are measurable on day 1 — tracking plan implicit in App Store Connect and Google Play Console analytics
 - [x] This document is drafted before launch, not written as a retrospective
 
 ---
