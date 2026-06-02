@@ -13,6 +13,8 @@ import { useAlarmNotificationResponse } from '@/src/platform/useAlarmNotificatio
 import { fonts, loadAppFonts } from '@/src/shared/theme';
 import '@/src/platform/visionCameraWorklets';
 
+import { ensureHabitSchema } from '@/src/platform/habitSqlite';
+
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
@@ -58,6 +60,10 @@ const navigationFonts = {
 
 function RootLayoutNav() {
   useAlarmNotificationResponse();
+
+  useEffect(() => {
+    void ensureHabitSchema();
+  }, []);
 
   const colorScheme = useColorScheme();
   const base = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
