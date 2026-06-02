@@ -18,6 +18,7 @@ import type { Alarm } from '@/src/shared/types';
 import { palette } from '@/src/shared/theme';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
 import { DashboardMascotPlaceholder } from '@/src/features/dashboard/DashboardMascotPlaceholder';
+import type { MascotMood } from '@/assets/images/mascot';
 import { deleteAlarm, getAlarms } from '@/src/platform/alarmStore';
 import {
   formatNextAlarmRingSummary,
@@ -132,7 +133,7 @@ export default function DashboardScreen() {
     }, []),
   );
 
-  const mascotMood = streak >= 7 ? 'pumped' : 'groggy';
+  const mascotMood: MascotMood = streak >= 30 ? 'legendary' : streak >= 14 ? 'thinking2' : streak >= 7 ? 'excited' : 'idle';
 
   const header = (
     <View style={styles.headerBlock}>

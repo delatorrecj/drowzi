@@ -45,20 +45,11 @@ body {
   min-height: 100%;
 }
 body {
-  background-color: #fff;
-}
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #000;
-  }
+  background-color: ${palette.surfaceDark};
 }
 @media (min-width: ${LG_MIN_WIDTH}px) {
   body {
-    background-color: ${palette.shellGutter};
-  }
-}
-@media (min-width: ${LG_MIN_WIDTH}px) and (prefers-color-scheme: dark) {
-  body {
     background-color: ${palette.shellGutterDark};
   }
-}`;
+}
+`;
