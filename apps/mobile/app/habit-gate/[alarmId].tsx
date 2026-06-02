@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, StyleSheet, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -70,9 +70,18 @@ export default function HabitGateScreen() {
   return (
     <SafeAreaView style={styles.screen}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Text style={styles.pretitle}>Wake habit</Text>
-      <Text style={styles.title}>{alarm.time}</Text>
-      <Text style={styles.sub}>{alarm.habitType} · local preview</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <View>
+          <Text style={styles.pretitle}>Wake habit</Text>
+          <Text style={styles.title}>{alarm.time}</Text>
+          <Text style={styles.sub}>{alarm.habitType} · local preview</Text>
+        </View>
+        <Image 
+          source={require('@/assets/images/mascot/mascot-excited.png')} 
+          style={{ width: 100, height: 100 }} 
+          resizeMode="contain" 
+        />
+      </View>
       <View style={styles.body}>
         <HabitGateRouter alarm={alarm} onVerified={onVerified} />
       </View>

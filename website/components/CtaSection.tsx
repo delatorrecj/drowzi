@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { COPY, SITE } from "@/lib/constants";
 
 export default function CtaSection() {
@@ -35,6 +37,13 @@ export default function CtaSection() {
           <GooglePlayIcon />
           Google Play
         </a>
+        <Link
+          href={SITE.demoUrl}
+          className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-display font-bold text-base transition-colors"
+          style={{ backgroundColor: "transparent", color: "#654321", border: "2px solid #654321" }}
+        >
+          {COPY.demo.ctaSecondary}
+        </Link>
       </div>
 
       <p className="font-body text-sm" style={{ color: "#9A7A50" }}>

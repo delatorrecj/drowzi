@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -126,6 +127,13 @@ export default function AddAlarmScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           <View style={styles.block}>
+            <View style={{ alignItems: 'center', marginBottom: 20 }}>
+              <Image 
+                source={require('@/assets/images/mascot/mascot-thinking.png')} 
+                style={{ width: 120, height: 120 }} 
+                resizeMode="contain" 
+              />
+            </View>
             <Text style={styles.kicker}>Physical habit</Text>
             <Text style={styles.title}>Time & exercise</Text>
             <Text style={styles.lede}>Camera verifies whichever exercise you pick.</Text>

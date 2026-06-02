@@ -1,8 +1,10 @@
 export const SITE = {
+  url: "https://drowzi-axon.vercel.app",
   appStoreUrl: "#download",   // replace with real App Store link
   playStoreUrl: "#download",  // replace with real Play Store link
-  githubUrl: "https://github.com/delatorrecj/drowzi",
+  githubUrl: "https://github.com/Troy-LL/drowzi",
   privacyUrl: "/privacy",
+  demoUrl: "/demo",
 };
 
 export const COPY = {
@@ -24,17 +26,17 @@ export const COPY = {
     ],
     failures: [
       {
-        icon: "🧩",
+        icon: "puzzle" as const,
         label: "Math puzzles",
         caption: "Short-term memory. Back asleep in 2 minutes.",
       },
       {
-        icon: "👆",
+        icon: "swipe" as const,
         label: "Swipe to dismiss",
         caption: "Pure muscle reflex. Zero real effort.",
       },
       {
-        icon: "😴",
+        icon: "snooze" as const,
         label: "Traditional snooze",
         caption: "Infinite delay. Infinite failure.",
       },
@@ -46,19 +48,19 @@ export const COPY = {
     sub: "Choose your habit. Register it once. The alarm does not stop until it's verified.",
     gates: [
       {
-        icon: "💪",
+        icon: "motion" as const,
         title: "Motion Gate",
         body: "Camera counts your push-ups, squats, or jumping jacks. Rep target must be reached. No exceptions.",
         image: "/images/phone-motion-gate.png",
       },
       {
-        icon: "📦",
+        icon: "barcode" as const,
         title: "Barcode Gate",
         body: "Register any item in your home — coffee bag, toothpaste, supplement bottle. You have to walk there to scan it.",
         image: "/images/phone-barcode-gate.png",
       },
       {
-        icon: "🎤",
+        icon: "voice" as const,
         title: "Voice Gate",
         body: "Read a motivational passage aloud. Voice recognition confirms you said it — clearly, fully, intentionally.",
         image: "/images/phone-voice-gate.png",
@@ -98,6 +100,14 @@ export const COPY = {
   cta: {
     headline: ["Your alarm goes off tomorrow.", "What are you going to do about it?"],
     badge: "Free · iOS 16+ · Android 12+",
+  },
+  demo: {
+    heroCta: "Try the web demo",
+    navLink: "Demo",
+    gateTryLabel: "Try it in your browser",
+    ctaSecondary: "Try web demo — no download",
+    hubTitle: "Experience the habit gates",
+    permissionsNote: "Uses camera and microphone. Nothing leaves your device.",
   },
   footer: {
     copyright: `© ${new Date().getFullYear()} Drowzi. All rights reserved.`,
