@@ -47,12 +47,13 @@ Secondary goal: **organic growth via shareability**. The mascot evolution system
 - Habit gate engine: camera-based pose/barcode verification, microphone-based speech recognition, accelerometer-based motion counting
 - Onboarding habit selector (Physical, Environmental, Cognitive/Mindfulness)
 - Mascot evolution system tied to habit streaks
-- User account and streak persistence (Supabase backend)
+- Offline-first local data persistence (SQLite & AsyncStorage)
 - Free tier with core features
 - App Store and Google Play submission
 
 **Out of Scope (V1):**
 
+- Cloud backend, user authentication, and multi-device data synchronization (Supabase)
 - Social/community features (leaderboards, friend challenges)
 - AI-generated personalized habit recommendations
 - Wearable integrations (Apple Watch, Fitbit)

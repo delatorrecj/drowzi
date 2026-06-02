@@ -14,6 +14,7 @@ export const mascotAssets = {
   focused: require('./mascot-focused.png'),
   defeated: require('./mascot-defeated.png'),
   alarmThrow: require('./mascot-alarm-throw.png'),
+  sleeping: require('./mascot-sleeping-standing.png'),
   sleepStanding: require('./mascot-sleep-standing.png'),
   mascot: require('./mascot.png'),
 
