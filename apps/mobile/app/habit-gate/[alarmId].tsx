@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Image, StyleSheet, Text, View } from 'react-n
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { mascotAssets } from '@/assets/images/mascot';
 import { HabitGateRouter } from '@/src/features/habits/HabitGateRouter';
 import { getAlarmById } from '@/src/platform/alarmStore';
 import { recordHabitCompletion } from '@/src/platform/recordCompletion';
@@ -77,7 +78,7 @@ export default function HabitGateScreen() {
           <Text style={styles.sub}>{alarm.habitType} · local preview</Text>
         </View>
         <Image 
-          source={require('@/assets/images/mascot/mascot-excited.png')} 
+          source={mascotAssets.excited} 
           style={{ width: 100, height: 100 }} 
           resizeMode="contain" 
         />
