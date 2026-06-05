@@ -1,11 +1,11 @@
 export const mascotAssets = {
-  // Website Assets (High Quality)
-  idle: require('./mascot-idle.png'),
-  excited: require('./mascot-excited.png'),
-  surprised: require('./mascot-surprised.png'),
-  thinking: require('./mascot-thinking.png'),
-  thinking2: require('./mascot-thinking-2.png'),
-  legendary: require('./Gemini_Generated_Image_hx0oyxhx0oyxhx0o.png'),
+  // Aliases retained for onboarding/dashboard compatibility
+  idle: require('./mascot.png'),
+  excited: require('./mascot-pumped.png'),
+  surprised: require('./mascot-awake.png'),
+  thinking: require('./mascot-groggy.png'),
+  thinking2: require('./mascot-focused.png'),
+  legendary: require('./mascot-legendary.png'),
 
   // Mobile Specific / Existing Assets
   awake: require('./mascot-awake.png'),

@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 
+import { mascotAssets } from '@/assets/images/mascot';
 import { ExercisePicker } from '@/src/features/alarm/ExercisePicker';
 import {
   PHYSICAL_EXERCISES,
@@ -129,7 +130,7 @@ export default function AddAlarmScreen() {
           <View style={styles.block}>
             <View style={{ alignItems: 'center', marginBottom: 20 }}>
               <Image 
-                source={require('@/assets/images/mascot/mascot-thinking.png')} 
+                source={mascotAssets.thinking} 
                 style={{ width: 120, height: 120 }} 
                 resizeMode="contain" 
               />

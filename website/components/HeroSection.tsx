@@ -5,7 +5,7 @@ import { COPY, SITE } from "@/lib/constants";
 
 export default function HeroSection() {
   return (
-    <section className="min-h-[90vh] flex items-center px-6 md:px-12 py-24 bg-[#1A1209]">
+    <section className="min-h-[calc(100vh-64px)] flex items-center px-6 md:px-12 py-12 md:py-20 bg-[#1A1209]">
       <div className="max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
         {/* Text */}
         <div className="flex flex-col gap-6">
