@@ -27,6 +27,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     };
   }
   if (
+    platform === 'web' &&
     typeof moduleName === 'string' &&
     moduleName.endsWith('.wasm') &&
     !path.isAbsolute(moduleName)

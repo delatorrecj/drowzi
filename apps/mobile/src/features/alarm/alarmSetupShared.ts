@@ -5,7 +5,7 @@ import {
   PHYSICAL_EXERCISES,
   type ExerciseDefinition,
 } from '@/src/features/exercise/exerciseRegistry';
-import type { ExerciseId } from '@/src/shared/types';
+import type { ExerciseId, MotionExerciseId } from '@/src/shared/types';
 
 export type AlarmSetupCategoryId = 'physical' | 'environmental' | 'cognitive';
 
@@ -64,7 +64,7 @@ export function buildHabitConfigFromInputs(
     const n = Math.min(500, Math.max(1, parseInt(repInput, 10) || def.defaultTarget));
     return {
       habitType: def.habitType,
-      habitConfig: { configVersion: 2, exerciseId: exerciseId as 'pushups' | 'squats' | 'jumping_jacks', repTarget: n },
+      habitConfig: { configVersion: 2, exerciseId: exerciseId as MotionExerciseId, repTarget: n },
     };
   }
   const secs = Math.min(600, Math.max(5, parseInt(holdInput, 10) || def.defaultTarget));
