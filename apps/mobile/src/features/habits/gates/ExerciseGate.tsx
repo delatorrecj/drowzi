@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { HabitGateProps } from '@/src/features/habits/gates/types';
-import { useAlarmLoop } from '@/src/features/habits/hooks/useAlarmLoop';
+import { useHabitCompletion } from '@/src/features/habits/hooks/useHabitCompletion';
 import { ExerciseCamera } from '@/src/features/exercise/ExerciseCamera';
 import {
   createDetectorForAlarm,
@@ -10,9 +10,7 @@ import {
 } from '@/src/features/exercise/exerciseRegistry';
 import type { ExerciseProgress } from '@/src/features/exercise/detectorTypes';
 import type { PoseLandmarks33 } from '@/src/features/exercise/landmarks';
-import { upsertHabitConfig, insertHabitLogRow } from '@/src/platform/habitSqlite';
-import { recordHabitCompletion } from '@/src/platform/recordCompletion';
-import { todayLocalDate } from '@/src/shared/date';
+import { upsertHabitConfig } from '@/src/platform/habitSqlite';
 
 function progressLabel(progress: ExerciseProgress): string {
   if (progress.mode === 'reps') {
@@ -24,20 +22,17 @@ function progressLabel(progress: ExerciseProgress): string {
 export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
   const resolved = resolveExerciseFromAlarm(alarm);
   const [progress, setProgress] = useState<ExerciseProgress | null>(null);
-  const [done, setDone] = useState(false);
   const [reposition, setReposition] = useState(false);
-  useAlarmLoop(!done);
-  const doneRef = useRef(false);
+  const { done, doneRef, finish, reset } = useHabitCompletion(alarm, onVerified);
   const detectorRef = useRef(createDetectorForAlarm(alarm));
 
   useEffect(() => {
     detectorRef.current = createDetectorForAlarm(alarm);
-    doneRef.current = false;
-    setDone(false);
+    reset();
     setReposition(false);
     const det = detectorRef.current;
     setProgress(det ? det.snapshot() : null);
-  }, [alarm.id, alarm.habitType, alarm.habitConfig]);
+  }, [alarm.id, alarm.habitType, alarm.habitConfig, reset]);
 
   useEffect(() => {
     if (!resolved) return;
@@ -52,25 +47,6 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
     });
   }, [alarm.habitType, alarm.id, resolved]);
 
-  const finishVerified = useCallback(async () => {
-    const localDate = todayLocalDate();
-    await insertHabitLogRow({
-      alarmId: alarm.id,
-      habitType: alarm.habitType,
-      success: true,
-      method: 'verified',
-      localDate,
-    });
-    await recordHabitCompletion({
-      alarmId: alarm.id,
-      habitType: alarm.habitType,
-      success: true,
-      method: 'verified',
-      localDate,
-    });
-    await onVerified();
-  }, [alarm.habitType, alarm.id, onVerified]);
-
   const onLandmarks = useCallback(
     (landmarks: PoseLandmarks33 | null, trackingLost: boolean) => {
       if (doneRef.current) return;
@@ -80,13 +56,9 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
       setReposition(trackingLost || det.isTrackingLost());
       const finished = det.feed(landmarks);
       setProgress(det.snapshot());
-      if (finished && !doneRef.current) {
-        doneRef.current = true;
-        setDone(true);
-        void finishVerified();
-      }
+      if (finished) void finish();
     },
-    [finishVerified],
+    [doneRef, finish],
   );
 
   const simulateOneStep = useCallback(() => {
@@ -99,12 +71,8 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
     const complete =
       (snap.mode === 'reps' && snap.reps >= snap.target) ||
       (snap.mode === 'hold' && snap.heldSeconds >= snap.targetSeconds);
-    if (complete) {
-      doneRef.current = true;
-      setDone(true);
-      void finishVerified();
-    }
-  }, [finishVerified]);
+    if (complete) void finish();
+  }, [doneRef, finish]);
 
   const title = useMemo(() => {
     if (!resolved) return 'Exercise gate';

@@ -119,11 +119,11 @@ export function createConfigDetector(
         return done;
       }
       const metric = metricFrom(landmarks);
-      prev = landmarks;
       if (metric === null || !Number.isFinite(metric)) {
         trackingLost = true;
         return done;
       }
+      prev = landmarks;
       trackingLost = false;
       return machine.feed(metric);
     },

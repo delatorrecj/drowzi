@@ -4,14 +4,11 @@ import type { HabitGateProps } from '@/src/features/habits/gates/types';
 import { fonts } from '@/src/shared/theme';
 import { PlaceholderGate } from '@/src/features/habits/gates/PlaceholderGate';
 
-export function VoiceGate(props: HabitGateProps) {
-  const passage =
-    'passageText' in props.alarm.habitConfig ? props.alarm.habitConfig.passageText : '';
-
+/** Web has no native code scanner here — use the demo fallback. */
+export function BarcodeGate(props: HabitGateProps) {
   return (
     <View style={styles.wrap}>
-      <Text style={styles.copy}>Read your passage aloud.</Text>
-      {passage ? <Text style={styles.quote}>{passage}</Text> : null}
+      <Text style={styles.copy}>Barcode scanning runs on the mobile app.</Text>
       <PlaceholderGate {...props} />
     </View>
   );
@@ -24,13 +21,5 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodySemiBold,
     color: '#654321',
     textAlign: 'center',
-  },
-  quote: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontFamily: fonts.body,
-    color: '#654321',
-    fontStyle: 'italic',
-    paddingHorizontal: 8,
   },
 });

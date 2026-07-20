@@ -36,6 +36,7 @@ This app uses **`expo-dev-client`** (camera / MediaPipe / notifications). Expo G
    With a single USB device attached, Expo installs to that phone. Prefer model name over adb serial if you must pass `-d` (e.g. `-d Infinix_X6731`).
 4. First compile can take several minutes (vision-camera, MediaPipe, reanimated). Later rebuilds are incremental.
 5. **Do not** run `npx expo prebuild --clean` unless native plugins/deps changed. Keep the local `android/` folder.
+6. **Habit gates need native modules.** Barcode uses `react-native-vision-camera` (code scanner) and voice uses `expo-speech-recognition` (mic + `RECORD_AUDIO`). After adding/updating either, run `npx expo prebuild` then `npm run android:device` to rebuild the dev client — a JS reload is not enough.
 
 **Day-to-day after the APK is installed**
 

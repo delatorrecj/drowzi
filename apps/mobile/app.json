@@ -46,9 +46,12 @@
       [
         "react-native-mediapipe-posedetection",
         {
-          "assetsPaths": ["./assets/models/"]
+          "assetsPaths": [
+            "./assets/models/"
+          ]
         }
-      ]
+      ],
+      "expo-speech-recognition"
     ],
     "experiments": {
       "typedRoutes": true

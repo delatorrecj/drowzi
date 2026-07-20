@@ -47,6 +47,37 @@ describe('createConfigDetector (reps, metric spec)', () => {
     for (const x of [0.1, 0.1, 0.9, 0.9, 0.1, 0.1]) det.feed(frame(x));
     expect(det.snapshot()).toMatchObject({ reps: 1 });
   });
+
+  it('does not update prev when metric is null or non-finite', () => {
+    const seenPrev: Array<PoseLandmarks33 | null> = [];
+    let call = 0;
+    const first = fullBody();
+    first[BLAZEPOSE.nose] = { x: 0.1, y: 0.5, visibility: 0.9 };
+    const bad = fullBody();
+    bad[BLAZEPOSE.nose] = { x: 0.2, y: 0.5, visibility: 0.9 };
+    const third = fullBody();
+    third[BLAZEPOSE.nose] = { x: 0.3, y: 0.5, visibility: 0.9 };
+
+    const spec: ExerciseSpec = {
+      kind: 'reps',
+      metric: (lm, prev) => {
+        seenPrev.push(prev);
+        call += 1;
+        // Second gated frame fails metric quality (null); third must still see first as prev.
+        if (call === 2) return null;
+        return lm[BLAZEPOSE.nose].x;
+      },
+      activeAbove: 0.8,
+      restBelow: 0.2,
+    };
+    const det = createConfigDetector(spec, 5, ['nose'], 0.6);
+    det.feed(first);
+    det.feed(bad);
+    expect(det.isTrackingLost()).toBe(true);
+    det.feed(third);
+    expect(seenPrev[2]).toBe(first);
+    expect(seenPrev[2]).not.toBe(bad);
+  });
 });
 
 describe('createConfigDetector validators', () => {
