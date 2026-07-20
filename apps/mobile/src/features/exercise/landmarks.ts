@@ -153,4 +153,40 @@ export function jointAngle(a: PosePoint, b: PosePoint, c: PosePoint): number {
   return calculateAngle(a, b, c);
 }
 
+/** Mid-shoulder to mid-hip distance — a scale-invariant body-size reference. */
+function torsoLength(landmarks: PoseLandmarks33): number {
+  const ls = landmarkAt(landmarks, 'leftShoulder');
+  const rs = landmarkAt(landmarks, 'rightShoulder');
+  const lh = landmarkAt(landmarks, 'leftHip');
+  const rh = landmarkAt(landmarks, 'rightHip');
+  if (!ls || !rs || !lh || !rh) return 0;
+  return Math.hypot((ls.x + rs.x) / 2 - (lh.x + rh.x) / 2, (ls.y + rs.y) / 2 - (lh.y + rh.y) / 2);
+}
+
+/**
+ * Mean per-landmark displacement since the previous frame, normalized by torso
+ * length so it's invariant to how far the user stands from the camera. Powers
+ * generic motion detection: high while moving vigorously, ~0 while still.
+ * ponytail: naive frame-diff heuristic — no ML model, no bundled asset.
+ */
+export function movementEnergy(
+  landmarks: PoseLandmarks33,
+  prev: PoseLandmarks33 | null,
+  minVisibility = MOTION_CONFIDENCE_MIN,
+): number {
+  if (!prev) return 0;
+  const scale = torsoLength(landmarks) || 1;
+  let sum = 0;
+  let count = 0;
+  for (let i = 0; i < landmarks.length; i += 1) {
+    const a = landmarks[i];
+    const b = prev[i];
+    if (!a || !b) continue;
+    if ((a.visibility ?? 0) < minVisibility || (b.visibility ?? 0) < minVisibility) continue;
+    sum += Math.hypot(a.x - b.x, a.y - b.y);
+    count += 1;
+  }
+  return count === 0 ? 0 : sum / count / scale;
+}
+
 export { calculateAngle };

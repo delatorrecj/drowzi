@@ -1,4 +1,4 @@
-import { createWarriorIDetector } from '@/src/features/exercise/detectors/warriorIDetector';
+import { EXERCISE_REGISTRY } from '@/src/features/exercise/exerciseRegistry';
 import { BLAZEPOSE, type PoseLandmarks33 } from '@/src/features/exercise/landmarks';
 
 function warriorLandmarks(): PoseLandmarks33 {
@@ -21,9 +21,9 @@ function warriorLandmarks(): PoseLandmarks33 {
   return lm;
 }
 
-describe('createWarriorIDetector', () => {
+describe('warrior_i hold detector (via registry spec)', () => {
   it('completes via simulateOneStep', () => {
-    const det = createWarriorIDetector({ holdDurationSeconds: 30 });
+    const det = EXERCISE_REGISTRY.warrior_i.createDetector(30);
     det.simulateOneStep();
     const snap = det.snapshot();
     expect(snap.mode).toBe('hold');

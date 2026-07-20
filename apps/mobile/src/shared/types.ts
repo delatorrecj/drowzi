@@ -11,7 +11,7 @@ export type Recurrence =
   | { type: 'once'; date: string }
   | { type: 'weekly'; days: number[] };
 
-export type MotionExerciseId = 'pushups' | 'squats' | 'jumping_jacks';
+export type MotionExerciseId = 'pushups' | 'squats' | 'jumping_jacks' | 'generic_motion';
 
 export type PoseExerciseId = 'warrior_i';
 
