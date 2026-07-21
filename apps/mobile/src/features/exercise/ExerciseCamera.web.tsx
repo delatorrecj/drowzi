@@ -18,8 +18,11 @@ export type ExerciseCameraStatus =
   | 'no_secure_context'
   | 'model_failed';
 
+export type CameraFacing = 'front' | 'back';
+
 type Props = {
   active: boolean;
+  facing?: CameraFacing;
   onLandmarks: (landmarks: PoseLandmarks33 | null, trackingLost: boolean) => void;
   onStatus?: (status: ExerciseCameraStatus, detail?: string) => void;
 };
@@ -33,7 +36,7 @@ const MODEL_URL =
  * Browser webcam + MediaPipe Pose Landmarker (BlazePose 33-pt).
  * MediaPipe is loaded from CDN — not bundled — to avoid Metro dynamic-import errors.
  */
-export function ExerciseCamera({ active, onLandmarks, onStatus }: Props) {
+export function ExerciseCamera({ active, facing = 'front', onLandmarks, onStatus }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const landmarkerRef = useRef<PoseLandmarkerInstance | null>(null);
   const modelReadyRef = useRef(false);
@@ -116,7 +119,7 @@ export function ExerciseCamera({ active, onLandmarks, onStatus }: Props) {
       if (!video || cancelled) return;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user' },
+          video: { facingMode: facing === 'front' ? 'user' : 'environment' },
           audio: false,
         });
         if (cancelled) {
@@ -146,7 +149,7 @@ export function ExerciseCamera({ active, onLandmarks, onStatus }: Props) {
         v.srcObject = null;
       }
     };
-  }, [active, modelGen, report]);
+  }, [active, modelGen, report, facing]);
 
   useEffect(() => {
     if (!active || !modelReadyRef.current) return;
@@ -197,7 +200,11 @@ export function ExerciseCamera({ active, onLandmarks, onStatus }: Props) {
         autoPlay: true,
         playsInline: true,
         muted: true,
-        style: styles.video as unknown as CSSProperties,
+        style: {
+          ...(styles.video as unknown as CSSProperties),
+          // Mirror the selfie view only; back camera shows the world un-flipped.
+          transform: facing === 'front' ? 'scaleX(-1)' : 'none',
+        },
       })}
       {overlay ? (
         <View style={styles.overlay} pointerEvents="none">

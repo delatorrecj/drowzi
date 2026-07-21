@@ -5,7 +5,7 @@ import { AppText, Button, radius } from '@/src/ui';
 import { palette } from '@/src/shared/theme';
 import type { HabitGateProps } from '@/src/features/habits/gates/types';
 import { useAlarmLoop } from '@/src/features/habits/hooks/useAlarmLoop';
-import { ExerciseCamera } from '@/src/features/exercise/ExerciseCamera';
+import { ExerciseCamera, type CameraFacing } from '@/src/features/exercise/ExerciseCamera';
 import {
   createDetectorForAlarm,
   resolveExerciseFromAlarm,
@@ -25,15 +25,16 @@ function progressLabel(progress: ExerciseProgress): string {
   return `${progress.heldSeconds} / ${progress.targetSeconds}s hold`;
 }
 
-export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
+export function ExerciseGate({ alarm, onVerified, standalone }: HabitGateProps) {
   const resolved = resolveExerciseFromAlarm(alarm);
   const [progress, setProgress] = useState<ExerciseProgress | null>(null);
   const [done, setDone] = useState(false);
   const [reposition, setReposition] = useState(false);
   const [showDebug, setShowDebug] = useState(__DEV__);
+  const [facing, setFacing] = useState<CameraFacing>('front');
   const [debugLandmarks, setDebugLandmarks] = useState<PoseLandmarks33 | null>(null);
   const [debugInfo, setDebugInfo] = useState<ExerciseDebug | null>(null);
-  useAlarmLoop(!done);
+  useAlarmLoop(!done && !standalone);
   const doneRef = useRef(false);
   const detectorRef = useRef(createDetectorForAlarm(alarm));
 
@@ -162,7 +163,7 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
       </AppText>
 
       <View style={styles.cameraBox}>
-        <ExerciseCamera active={cameraActive} onLandmarks={onLandmarks} />
+        <ExerciseCamera active={cameraActive} facing={facing} onLandmarks={onLandmarks} />
         {showDebug && cameraActive ? (
           <PoseDebugOverlay
             landmarks={debugLandmarks}
@@ -178,6 +179,12 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
           </View>
         ) : null}
       </View>
+
+      <Button
+        title={facing === 'front' ? 'Use back camera' : 'Use front camera'}
+        variant="secondary"
+        onPress={() => setFacing((f) => (f === 'front' ? 'back' : 'front'))}
+      />
 
       <Button
         title={showDebug ? 'Hide pose debug' : 'Show pose debug'}
