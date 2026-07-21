@@ -8,4 +8,4 @@ export { Input } from '@/src/ui/Input';
 export { Screen } from '@/src/ui/Screen';
 export { Icon, type IconName } from '@/src/ui/Icon';
 export { EmptyState } from '@/src/ui/EmptyState';
-export { MascotEvolution } from '@/src/ui/MascotEvolution';
+export { MascotEvolution, mascotProgress } from '@/src/ui/MascotEvolution';
