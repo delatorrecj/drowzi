@@ -8,8 +8,9 @@ import {
   createDetectorForAlarm,
   resolveExerciseFromAlarm,
 } from '@/src/features/exercise/exerciseRegistry';
-import type { ExerciseProgress } from '@/src/features/exercise/detectorTypes';
+import type { ExerciseDebug, ExerciseProgress } from '@/src/features/exercise/detectorTypes';
 import type { PoseLandmarks33 } from '@/src/features/exercise/landmarks';
+import { PoseDebugOverlay } from '@/src/features/exercise/PoseDebugOverlay';
 import { upsertHabitConfig, insertHabitLogRow } from '@/src/platform/habitSqlite';
 import { recordHabitCompletion } from '@/src/platform/recordCompletion';
 import { todayLocalDate } from '@/src/shared/date';
@@ -26,6 +27,9 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
   const [progress, setProgress] = useState<ExerciseProgress | null>(null);
   const [done, setDone] = useState(false);
   const [reposition, setReposition] = useState(false);
+  const [showDebug, setShowDebug] = useState(__DEV__);
+  const [debugLandmarks, setDebugLandmarks] = useState<PoseLandmarks33 | null>(null);
+  const [debugInfo, setDebugInfo] = useState<ExerciseDebug | null>(null);
   useAlarmLoop(!done);
   const doneRef = useRef(false);
   const detectorRef = useRef(createDetectorForAlarm(alarm));
@@ -80,13 +84,17 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
       setReposition(trackingLost || det.isTrackingLost());
       const finished = det.feed(landmarks);
       setProgress(det.snapshot());
+      if (showDebug) {
+        setDebugLandmarks(landmarks);
+        setDebugInfo(det.debug?.() ?? null);
+      }
       if (finished && !doneRef.current) {
         doneRef.current = true;
         setDone(true);
         void finishVerified();
       }
     },
-    [finishVerified],
+    [finishVerified, showDebug],
   );
 
   const simulateOneStep = useCallback(() => {
@@ -133,6 +141,13 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
 
       <View style={styles.cameraBox}>
         <ExerciseCamera active={cameraActive} onLandmarks={onLandmarks} />
+        {showDebug && cameraActive ? (
+          <PoseDebugOverlay
+            landmarks={debugLandmarks}
+            debug={debugInfo}
+            trackingLost={reposition}
+          />
+        ) : null}
         {reposition && cameraActive ? (
           <View style={styles.repositionOverlay} pointerEvents="none">
             <Text style={styles.repositionText}>
@@ -141,6 +156,12 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
           </View>
         ) : null}
       </View>
+
+      <Pressable style={styles.debugToggle} onPress={() => setShowDebug((v) => !v)}>
+        <Text style={styles.debugToggleLabel}>
+          {showDebug ? 'Hide pose debug' : 'Show pose debug'}
+        </Text>
+      </Pressable>
 
       <Pressable style={styles.demo} onPress={simulateOneStep} disabled={done}>
         <Text style={styles.demoLabel}>
@@ -175,6 +196,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
   },
+  debugToggle: {
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#654321',
+    alignItems: 'center',
+  },
+  debugToggleLabel: { fontWeight: '600', color: '#654321', fontSize: 13 },
   demo: {
     paddingVertical: 12,
     borderRadius: 10,
