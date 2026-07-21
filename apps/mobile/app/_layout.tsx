@@ -81,6 +81,7 @@ function RootLayoutNav() {
           <Stack.Screen name="onboarding" options={{ title: 'Welcome', ...alarmSetupScreenOptions }} />
           <Stack.Screen name="add-alarm" options={{ title: 'Add alarm', ...alarmSetupScreenOptions }} />
           <Stack.Screen name="habit-gate/[alarmId]" options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="practice" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>

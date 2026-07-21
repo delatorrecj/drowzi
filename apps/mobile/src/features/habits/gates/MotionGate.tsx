@@ -12,12 +12,13 @@ export function MotionGate(props: HabitGateProps) {
     resolved?.definition.verificationMode === 'hold'
       ? `${resolved.target}s hold`
       : `${resolved?.target ?? '…'} reps`;
+  const silenceCopy = props.standalone
+    ? `Complete ${targetLabel} of ${resolved?.definition.label ?? 'exercise'} to finish practice.`
+    : `Complete ${targetLabel} of ${resolved?.definition.label ?? 'exercise'} to silence the alarm.`;
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.copy}>
-        Complete {targetLabel} of {resolved?.definition.label ?? 'exercise'} to silence the alarm.
-      </Text>
+      <Text style={styles.copy}>{silenceCopy}</Text>
       <ExerciseGate {...props} />
     </View>
   );
