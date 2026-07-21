@@ -1,4 +1,25 @@
 import type { PoseLandmarks33 } from '@/src/features/exercise/landmarks';
+import type { PosePoint } from '@/src/features/pushup/poseTypes';
+
+/** What the detector is measuring this frame — for the on-screen debug overlay. */
+export type ExerciseDebug = {
+  /** 'rest' | 'active' for reps, 'hold' for timed poses. */
+  phase: string;
+  /** Measured scalar this frame (joint angle in deg, openness, energy). null = untrackable. */
+  metric: number | null;
+  /** Human label for the metric, e.g. "arm angle". */
+  metricLabel: string;
+  /** Unit suffix appended to metric, e.g. "°" or "". */
+  unit: string;
+  /** Rule that flips into the active half of a rep, e.g. "active < 90°". */
+  activeRule: string;
+  /** Rule that flips back to rest and counts, e.g. "rest > 150°". */
+  restRule: string;
+  /** The joints being measured this frame (highlighted in the overlay). */
+  chain: PosePoint[] | null;
+  /** 0..1 depth of the current rep: 0 = fully at rest, 1 = full active/bottom. */
+  repProgress: number;
+};
 
 export type RepProgress = {
   mode: 'reps';
@@ -20,6 +41,8 @@ export type ExerciseDetector = {
   snapshot(): ExerciseProgress;
   isTrackingLost(): boolean;
   simulateOneStep(): void;
+  /** Optional: last measured metric + thresholds for the debug overlay. */
+  debug?(): ExerciseDebug;
 };
 
 export type RepDetectorConfig = {

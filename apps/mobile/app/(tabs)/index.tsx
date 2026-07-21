@@ -8,17 +8,13 @@ import {
   Pressable,
   RefreshControl,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router, useFocusEffect } from 'expo-router';
 
 import type { Alarm } from '@/src/shared/types';
-import { palette } from '@/src/shared/theme';
-import { dashboardTheme } from '@/src/shared/dashboardTheme';
-import { DashboardMascotPlaceholder } from '@/src/features/dashboard/DashboardMascotPlaceholder';
-import type { MascotMood } from '@/assets/images/mascot';
+import { AppText, Badge, Button, MascotEvolution, StatCard, color, space } from '@/src/ui';
 import { deleteAlarm, getAlarms } from '@/src/platform/alarmStore';
 import {
   formatNextAlarmRingSummary,
@@ -133,17 +129,19 @@ export default function DashboardScreen() {
     }, []),
   );
 
-  const mascotMood: MascotMood = streak >= 30 ? 'legendary' : streak >= 14 ? 'thinking2' : streak >= 7 ? 'excited' : 'idle';
-
   const header = (
     <View style={styles.headerBlock}>
       {!onboarded ? (
         <View style={styles.banner}>
-          <Text style={styles.bannerTitle}>Finish onboarding</Text>
-          <Text style={styles.bannerBody}>Complete the welcome flow so your first alarm is saved.</Text>
+          <AppText variant="bodyStrong">Finish onboarding</AppText>
+          <AppText variant="caption" color={color.textMuted}>
+            Complete the welcome flow so your first alarm is saved.
+          </AppText>
           <Link href="/onboarding" asChild>
             <Pressable style={styles.bannerCta}>
-              <Text style={styles.bannerCtaLabel}>Continue setup</Text>
+              <AppText variant="bodyStrong" color={color.textOnPrimary}>
+                Continue setup
+              </AppText>
             </Pressable>
           </Link>
         </View>
@@ -151,53 +149,55 @@ export default function DashboardScreen() {
 
       {Platform.OS !== 'web' && !notificationAllowed ? (
         <View style={[styles.banner, styles.warnBanner]}>
-          <Text style={styles.bannerTitle}>Notifications are off</Text>
-          <Text style={styles.bannerBody}>
+          <AppText variant="bodyStrong">Notifications are off</AppText>
+          <AppText variant="caption" color={color.textMuted}>
             Scheduled alarms cannot fire until the system allows Drowzi to notify you.
-          </Text>
+          </AppText>
           <Pressable style={styles.bannerCta} onPress={() => void Linking.openSettings()}>
-            <Text style={styles.bannerCtaLabel}>Open system settings</Text>
+            <AppText variant="bodyStrong" color={color.textOnPrimary}>
+              Open system settings
+            </AppText>
           </Pressable>
         </View>
       ) : null}
 
       {displayName ? (
-        <>
-          <Text style={styles.greetingPersonal}>Morning, {displayName}</Text>
-          <Text style={styles.greetingSub}>Your accountability hub</Text>
-        </>
+        <View>
+          <AppText variant="h2">Morning, {displayName}</AppText>
+          <AppText variant="label" color={color.textMuted}>
+            Your accountability hub
+          </AppText>
+        </View>
       ) : (
-        <Text style={styles.greeting}>Morning accountability</Text>
+        <AppText variant="label" color={color.textMuted}>
+          Morning accountability
+        </AppText>
       )}
 
       <View style={styles.heroRow}>
-        <DashboardMascotPlaceholder mood={mascotMood} />
+        <MascotEvolution streak={streak} />
       </View>
 
       <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{streak}</Text>
-          <Text style={styles.statLabel}>Day streak</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{recentCount}</Text>
-          <Text style={styles.statLabel}>Logs (7 days)</Text>
-        </View>
+        <StatCard value={streak} label="Day streak" />
+        <StatCard value={recentCount} label="Logs (7 days)" />
       </View>
 
       <View style={styles.sectionHead}>
-        <Text style={styles.h1}>Alarms</Text>
+        <AppText variant="h2">Alarms</AppText>
         <Link href="/add-alarm" asChild>
           <Pressable style={styles.addChip}>
-            <Text style={styles.addChipLabel}>+ Add</Text>
+            <AppText variant="bodyStrong" color={color.primary}>
+              + Add
+            </AppText>
           </Pressable>
         </Link>
       </View>
 
-      <Text style={styles.lede}>
+      <AppText variant="caption" color={color.textMuted}>
         Alarms notify at the clock time below (daily = next occurrence; if today’s time already passed, the next ring
         is usually tomorrow unless you tap Edit). Tap Simulate anytime to practise the gate. Not on web.
-      </Text>
+      </AppText>
     </View>
   );
 
@@ -210,19 +210,21 @@ export default function DashboardScreen() {
           void refresh();
           router.replace('/');
         }}>
-        <Text style={styles.resetLabel}>Reset onboarding (dev)</Text>
+        <AppText variant="caption" color={color.textMuted} style={styles.resetLabel}>
+          Reset onboarding (dev)
+        </AppText>
       </Pressable>
     </View>
   );
 
   const empty = (
     <View style={styles.empty}>
-      <Text style={styles.emptyTitle}>No alarms yet</Text>
-      <Text style={styles.emptyBody}>Run onboarding or add your first habit alarm.</Text>
+      <AppText variant="h3">No alarms yet</AppText>
+      <AppText variant="body" color={color.textMuted} style={{ textAlign: 'center' }}>
+        Run onboarding or add your first habit alarm.
+      </AppText>
       <Link href="/add-alarm" asChild>
-        <Pressable style={styles.emptyCta}>
-          <Text style={styles.emptyCtaLabel}>Set up first alarm</Text>
-        </Pressable>
+        <Button title="Set up first alarm" style={{ marginTop: space[2] }} />
       </Link>
     </View>
   );
@@ -230,21 +232,29 @@ export default function DashboardScreen() {
   const renderItem: ListRenderItem<Alarm> = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.cardTop}>
-        <Text style={styles.time}>{item.time}</Text>
-        <View style={styles.badge}>
-          <Text style={styles.badgeLabel}>{habitLabel(item.habitType)}</Text>
-        </View>
+        <AppText variant="h1" style={styles.time}>
+          {item.time}
+        </AppText>
+        <Badge label={habitLabel(item.habitType)} />
       </View>
-      <Text style={styles.nextRing}>{nextRingById[item.id] ?? '—'}</Text>
-      <Text style={styles.meta}>{item.recurrence.type} · tap Simulate to practise the gate now</Text>
-      <Text style={styles.manageHint}>Edit time & reps, or remove this alarm.</Text>
+      <AppText variant="bodyStrong" color={color.primary} style={styles.nextRing}>
+        {nextRingById[item.id] ?? '—'}
+      </AppText>
+      <AppText variant="caption" color={color.textMuted} style={{ textTransform: 'capitalize' }}>
+        {item.recurrence.type} · tap Simulate to practise the gate now
+      </AppText>
+      <AppText variant="caption" color={color.text}>
+        Edit time & reps, or remove this alarm.
+      </AppText>
       <View style={styles.cardActions}>
         <Pressable
           style={styles.editAction}
           accessibilityRole="button"
           accessibilityLabel={`Edit alarm ${item.time}`}
           onPress={() => router.push({ pathname: '/add-alarm', params: { id: item.id } })}>
-          <Text style={styles.editActionLabel}>Edit alarm</Text>
+          <AppText variant="bodyStrong" color={color.primary}>
+            Edit alarm
+          </AppText>
         </Pressable>
         <Pressable
           style={styles.deleteAction}
@@ -260,11 +270,15 @@ export default function DashboardScreen() {
               },
             ])
           }>
-          <Text style={styles.deleteActionLabel}>Delete</Text>
+          <AppText variant="bodyStrong" color={color.alarmAccent}>
+            Delete
+          </AppText>
         </Pressable>
       </View>
       <Pressable style={styles.simulate} onPress={() => router.push(`/habit-gate/${item.id}`)}>
-        <Text style={styles.simulateLabel}>Simulate alarm</Text>
+        <AppText variant="bodyStrong" color={color.textOnPrimary}>
+          Simulate alarm
+        </AppText>
       </Pressable>
     </View>
   );
@@ -286,8 +300,8 @@ export default function DashboardScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={dashboardTheme.primary}
-              colors={[dashboardTheme.primary]}
+              tintColor={color.primary}
+              colors={[color.primary]}
             />
           )
         }
@@ -297,179 +311,51 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: dashboardTheme.bg,
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: dashboardTheme.bg,
-  },
-  scroll: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  scrollEmpty: {
-    flexGrow: 1,
-  },
-  headerBlock: {
-    gap: 16,
-    paddingBottom: 20,
-  },
-  footerBlock: {
-    paddingTop: 24,
-    gap: 10,
-  },
+  safe: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1, backgroundColor: color.bg },
+  scroll: { paddingHorizontal: 20, paddingBottom: 40 },
+  scrollEmpty: { flexGrow: 1 },
+  headerBlock: { gap: 16, paddingBottom: 20 },
+  footerBlock: { paddingTop: 24, gap: 10 },
   banner: {
     padding: 14,
     borderRadius: 12,
-    backgroundColor: dashboardTheme.surface,
+    backgroundColor: color.surface,
     borderWidth: 1,
-    borderColor: dashboardTheme.border,
+    borderColor: color.border,
     gap: 8,
-  },
-  bannerTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: dashboardTheme.text,
-  },
-  bannerBody: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: dashboardTheme.textMuted,
   },
   bannerCta: {
     alignSelf: 'flex-start',
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 10,
-    backgroundColor: dashboardTheme.primary,
+    backgroundColor: color.primary,
   },
-  bannerCtaLabel: {
-    color: dashboardTheme.textOnPrimary,
-    fontWeight: '800',
-  },
-  warnBanner: {
-    borderWidth: 1,
-    borderColor: dashboardTheme.alarmAccent,
-  },
-  greeting: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: dashboardTheme.textMuted,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  greetingPersonal: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: dashboardTheme.text,
-    letterSpacing: -0.3,
-  },
-  greetingSub: {
-    marginTop: 4,
-    fontSize: 13,
-    fontWeight: '700',
-    color: dashboardTheme.textMuted,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
-  heroRow: {
-    alignItems: 'center',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    backgroundColor: dashboardTheme.surface,
-    borderWidth: 1,
-    borderColor: dashboardTheme.border,
-    alignItems: 'center',
-    gap: 4,
-  },
-  statValue: {
-    fontSize: 36,
-    fontWeight: '900',
-    color: dashboardTheme.primary,
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: dashboardTheme.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
+  warnBanner: { borderWidth: 1, borderColor: color.alarmAccent },
+  heroRow: { alignItems: 'center' },
+  statsRow: { flexDirection: 'row', gap: 12 },
   sectionHead: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 8,
   },
-  h1: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: dashboardTheme.text,
-  },
   addChip: {
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 999,
-    backgroundColor: dashboardTheme.surface,
+    backgroundColor: color.surface,
     borderWidth: 1,
-    borderColor: dashboardTheme.primary,
+    borderColor: color.primary,
   },
-  addChipLabel: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: dashboardTheme.primary,
-  },
-  lede: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: dashboardTheme.textMuted,
-    marginTop: -4,
-  },
-  empty: {
-    paddingVertical: 28,
-    paddingHorizontal: 8,
-    gap: 12,
-    alignItems: 'center',
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: dashboardTheme.text,
-  },
-  emptyBody: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: dashboardTheme.textMuted,
-    textAlign: 'center',
-  },
-  emptyCta: {
-    marginTop: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 22,
-    borderRadius: 12,
-    backgroundColor: dashboardTheme.primary,
-    borderWidth: 2,
-    borderColor: dashboardTheme.border,
-  },
-  emptyCtaLabel: {
-    fontWeight: '900',
-    color: dashboardTheme.textOnPrimary,
-  },
+  empty: { paddingVertical: 28, paddingHorizontal: 8, gap: 12, alignItems: 'center' },
   card: {
     padding: 18,
     borderRadius: 16,
-    backgroundColor: dashboardTheme.surface,
+    backgroundColor: color.surface,
     borderWidth: 1,
-    borderColor: dashboardTheme.border,
+    borderColor: color.border,
     gap: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -483,67 +369,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
-  time: {
-    fontSize: 40,
-    fontWeight: '900',
-    color: dashboardTheme.text,
-    letterSpacing: -1,
-  },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: 'rgba(244, 196, 48, 0.15)',
-    borderWidth: 1,
-    borderColor: dashboardTheme.primary,
-  },
-  badgeLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: dashboardTheme.primary,
-    textTransform: 'uppercase',
-  },
-  nextRing: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '800',
-    color: dashboardTheme.primary,
-  },
-  meta: {
-    fontSize: 13,
-    color: dashboardTheme.textMuted,
-    textTransform: 'capitalize',
-  },
-  manageHint: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: dashboardTheme.text,
-    opacity: 0.9,
-    marginTop: 2,
-  },
-  cardActions: {
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: 10,
-    marginTop: 10,
-  },
+  time: { fontSize: 40, lineHeight: 44, letterSpacing: -1 },
+  nextRing: { marginTop: 6, fontSize: 13 },
+  cardActions: { flexDirection: 'row', flexWrap: 'nowrap', gap: 10, marginTop: 10 },
   editAction: {
     flex: 1,
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 12,
     borderRadius: 12,
     backgroundColor: 'rgba(244, 196, 48, 0.14)',
     borderWidth: 2,
-    borderColor: dashboardTheme.primary,
-  },
-  editActionLabel: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: dashboardTheme.primary,
+    borderColor: color.primary,
   },
   deleteAction: {
     flex: 1,
@@ -551,16 +389,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 12,
     borderRadius: 12,
     backgroundColor: 'rgba(230, 57, 70, 0.12)',
     borderWidth: 2,
-    borderColor: dashboardTheme.alarmAccent,
-  },
-  deleteActionLabel: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: dashboardTheme.alarmAccent,
+    borderColor: color.alarmAccent,
   },
   simulate: {
     marginTop: 4,
@@ -568,24 +400,10 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     paddingHorizontal: 18,
     borderRadius: 12,
-    backgroundColor: dashboardTheme.primary,
+    backgroundColor: color.primary,
     borderWidth: 2,
-    borderColor: palette.groundedBrown,
+    borderColor: color.textOnPrimary,
   },
-  simulateLabel: {
-    fontWeight: '900',
-    color: dashboardTheme.textOnPrimary,
-    fontSize: 15,
-  },
-  reset: {
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  resetLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: dashboardTheme.textMuted,
-    textDecorationLine: 'underline',
-    opacity: 0.85,
-  },
+  reset: { paddingVertical: 12, alignItems: 'center' },
+  resetLabel: { textDecorationLine: 'underline' },
 });

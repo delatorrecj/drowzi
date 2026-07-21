@@ -5,7 +5,7 @@ export const mascotAssets = {
   surprised: require('./mascot-surprised.png'),
   thinking: require('./mascot-thinking.png'),
   thinking2: require('./mascot-thinking-2.png'),
-  legendary: require('./Gemini_Generated_Image_hx0oyxhx0oyxhx0o.png'),
+  legendary: require('./mascot-legendary.png'),
 
   // Mobile Specific / Existing Assets
   awake: require('./mascot-awake.png'),

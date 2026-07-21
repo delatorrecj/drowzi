@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
-import { dashboardTheme } from '@/src/shared/dashboardTheme';
+import { AppText, Button, color } from '@/src/ui';
 import { openAndroidExactAlarmSettings, openWakeAlarmSoundSettings } from '@/src/platform/openWakeAlarmSoundSettings';
 
 export default function MoreScreen() {
@@ -31,81 +31,56 @@ export default function MoreScreen() {
 
   return (
     <View style={styles.screen}>
-      <Text style={styles.title}>Alarm sound</Text>
-      <Text style={styles.body}>
+      <AppText variant="h3">Alarm sound</AppText>
+      <AppText variant="body" color={color.textMuted}>
         {Platform.OS === 'android'
           ? 'Opens the “Wake alarms” channel. Choose any system sound — including alarm tones on many phones.'
           : 'iOS does not let third-party apps use the Clock app’s alarm tone for scheduled notifications. You get the default alert sound unless you add a custom sound to the app build. This button opens Drowzi’s settings so you can adjust notifications.'}
-      </Text>
-      <Pressable style={styles.button} onPress={() => void onAlarmSound()}>
-        <Text style={styles.buttonLabel}>Choose alarm / notification sound</Text>
-      </Pressable>
-      {soundHint ? <Text style={styles.hint}>{soundHint}</Text> : null}
+      </AppText>
+      <Button title="Choose alarm / notification sound" style={styles.button} onPress={() => void onAlarmSound()} />
+      {soundHint ? (
+        <AppText variant="caption" color={color.textMuted}>
+          {soundHint}
+        </AppText>
+      ) : null}
 
       {Platform.OS === 'android' ? (
         <>
-          <Text style={[styles.title, styles.sectionTop]}>Alarms firing late or never?</Text>
-          <Text style={styles.body}>
+          <AppText variant="h3" style={styles.sectionTop}>
+            Alarms firing late or never?
+          </AppText>
+          <AppText variant="body" color={color.textMuted}>
             Some phones block background timers unless “Alarms & reminders” / exact alarms are enabled for this
             app. Use this after you have allowed notifications.
-          </Text>
-          <Pressable style={styles.button} onPress={() => void onExactAlarmPermission()}>
-            <Text style={styles.buttonLabel}>Allow on-time alarms (Android)</Text>
-          </Pressable>
-          {exactHint ? <Text style={styles.hint}>{exactHint}</Text> : null}
+          </AppText>
+          <Button title="Allow on-time alarms (Android)" style={styles.button} onPress={() => void onExactAlarmPermission()} />
+          {exactHint ? (
+            <AppText variant="caption" color={color.textMuted}>
+              {exactHint}
+            </AppText>
+          ) : null}
         </>
       ) : null}
 
-      <Text style={[styles.title, styles.sectionTop]}>Developer split</Text>
-      <Text style={styles.body}>
+      <AppText variant="h3" style={styles.sectionTop}>
+        Developer split
+      </AppText>
+      <AppText variant="body" color={color.textMuted}>
         Platform & data: apps/mobile/src/platform — notifications, local persistence (AsyncStorage on device and
         web).
-      </Text>
-      <Text style={styles.body}>
+      </AppText>
+      <AppText variant="body" color={color.textMuted}>
         Product & gates: apps/mobile/src/features/habits — replace stubs with real sensors / ML Kit.
-      </Text>
-      <Text style={styles.body}>See docs/plan-dev-workflow-split.md and apps/mobile/CONTRACT.md.</Text>
+      </AppText>
+      <AppText variant="body" color={color.textMuted}>
+        See docs/plan-dev-workflow-split.md and apps/mobile/CONTRACT.md.
+      </AppText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: dashboardTheme.bg,
-    gap: 12,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: dashboardTheme.text,
-  },
-  body: {
-    fontSize: 15,
-    lineHeight: 24,
-    color: dashboardTheme.textMuted,
-  },
-  button: {
-    alignSelf: 'flex-start',
-    marginTop: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: dashboardTheme.primary,
-  },
-  buttonLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: dashboardTheme.textOnPrimary,
-  },
-  hint: {
-    marginTop: 8,
-    fontSize: 14,
-    lineHeight: 20,
-    color: dashboardTheme.textMuted,
-  },
-  sectionTop: {
-    marginTop: 28,
-  },
+  screen: { flex: 1, padding: 20, backgroundColor: color.bg, gap: 12 },
+  button: { alignSelf: 'flex-start', marginTop: 8 },
+  sectionTop: { marginTop: 28 },
 });
