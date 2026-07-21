@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type { HabitCompletionPayload } from '@/src/shared/types';
+import type { HabitCompletionPayload, HabitLogMethod } from '@/src/shared/types';
 import { todayLocalDate } from '@/src/shared/date';
 
 import { storageKeys } from '@/src/platform/storage';
@@ -88,5 +88,42 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     successRate: logs.length ? Math.round((totalCompleted / logs.length) * 100) : null,
     streak: computeStreak(successDates),
     week,
+  };
+}
+
+export type InsightsStats = {
+  streak: number;
+  totalCompleted: number;
+  successRate: number | null;
+  totalLogs: number;
+  /** Oldest → newest, one entry per calendar day. */
+  calendar: { date: string; done: boolean }[];
+  /** Count of successful completions by verification method. */
+  byMethod: Record<HabitLogMethod, number>;
+};
+
+/** Longer-window snapshot for the Insights tab (calendar heatmap + method breakdown). */
+export async function getInsightsStats(days = 30): Promise<InsightsStats> {
+  const logs = await readLogs();
+  const successLogs = logs.filter((l) => l.success);
+  const successDates = new Set(successLogs.map((l) => l.localDate));
+  const today = todayLocalDate();
+  const calendar = Array.from({ length: days }, (_, i) => {
+    const date = localDateMinusDays(today, days - 1 - i);
+    return { date, done: successDates.has(date) };
+  });
+  const byMethod: Record<HabitLogMethod, number> = {
+    verified: 0,
+    fallback_timer: 0,
+    force_closed: 0,
+  };
+  for (const l of successLogs) byMethod[l.method] += 1;
+  return {
+    streak: computeStreak(successDates),
+    totalCompleted: successLogs.length,
+    successRate: logs.length ? Math.round((successLogs.length / logs.length) * 100) : null,
+    totalLogs: logs.length,
+    calendar,
+    byMethod,
   };
 }

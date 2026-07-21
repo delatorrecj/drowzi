@@ -20,6 +20,21 @@ function currentStage(streak: number): number {
   return idx;
 }
 
+/** Current stage name + next milestone (null if at final stage). */
+export function mascotProgress(streak: number): {
+  stageName: string;
+  next: { name: string; day: number; daysAway: number } | null;
+} {
+  const active = currentStage(streak);
+  const upcoming = STAGES[active + 1];
+  return {
+    stageName: STAGES[active].name,
+    next: upcoming
+      ? { name: upcoming.name, day: upcoming.day, daysAway: upcoming.day - streak }
+      : null,
+  };
+}
+
 type Props = { streak: number };
 
 /**
