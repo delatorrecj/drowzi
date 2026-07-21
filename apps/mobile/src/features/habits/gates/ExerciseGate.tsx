@@ -13,6 +13,7 @@ import {
 import type { ExerciseDebug, ExerciseProgress } from '@/src/features/exercise/detectorTypes';
 import type { PoseLandmarks33 } from '@/src/features/exercise/landmarks';
 import { PoseDebugOverlay } from '@/src/features/exercise/PoseDebugOverlay';
+import { poseLog } from '@/src/features/exercise/poseDebugLog';
 import { upsertHabitConfig, insertHabitLogRow } from '@/src/platform/habitSqlite';
 import { recordHabitCompletion } from '@/src/platform/recordCompletion';
 import { todayLocalDate } from '@/src/shared/date';
@@ -85,10 +86,21 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
 
       setReposition(trackingLost || det.isTrackingLost());
       const finished = det.feed(landmarks);
-      setProgress(det.snapshot());
+      const snap = det.snapshot();
+      setProgress(snap);
+      const dbg = det.debug?.() ?? null;
+      poseLog(
+        'gate',
+        1000,
+        'landmarks=', landmarks ? `${landmarks.length}pts` : 'NULL',
+        'trackingLost=', trackingLost || det.isTrackingLost(),
+        'metric=', dbg?.metric ?? '—',
+        'phase=', dbg?.phase ?? '—',
+        'progress=', snap.mode === 'reps' ? `${snap.reps}/${snap.target}` : `${snap.heldSeconds}/${snap.targetSeconds}s`,
+      );
       if (showDebug) {
         setDebugLandmarks(landmarks);
-        setDebugInfo(det.debug?.() ?? null);
+        setDebugInfo(dbg);
       }
       if (finished && !doneRef.current) {
         doneRef.current = true;

@@ -11,6 +11,7 @@ import type { RawLandmark } from '@/src/features/exercise/poseAdapter';
 
 import { normalizeMediaPipePose } from '@/src/features/exercise/poseAdapter';
 import type { PoseLandmarks33 } from '@/src/features/exercise/landmarks';
+import { poseLog } from '@/src/features/exercise/poseDebugLog';
 
 const POSE_MODEL = 'pose_landmarker_lite.task';
 
@@ -40,6 +41,7 @@ export function ExerciseCamera({ active, onLandmarks, onStatus }: Props) {
 
   const report = useCallback(
     (status: ExerciseCameraStatus, detail?: string) => {
+      poseLog('status', 0, status, detail ?? '');
       onStatus?.(status, detail);
     },
     [onStatus],
@@ -50,13 +52,18 @@ export function ExerciseCamera({ active, onLandmarks, onStatus }: Props) {
       landmarks?: RawLandmark[][];
       results?: { landmarks?: RawLandmark[][] }[];
     };
+    // Log the raw result SHAPE once so we can confirm the parse path matches the
+    // native module's output (landmarks[] vs results[].landmarks[]).
+    poseLog('result-shape', 3000, 'keys=', result ? Object.keys(result) : null, 'sample=', JSON.stringify(result)?.slice(0, 300));
     const raw = bundle.landmarks?.[0] ?? bundle.results?.[0]?.landmarks?.[0];
     const normalized = normalizeMediaPipePose(raw ?? null);
+    poseLog('results', 1000, 'frameLandmarks=', raw?.length ?? 0, 'normalized=', normalized ? `${normalized.length}pts` : 'NULL');
     onLandmarksRef.current(normalized, !normalized);
   }, []);
 
   const handleError = useCallback(
     (error: DetectionError) => {
+      poseLog('error', 0, error.message);
       report('model_failed', error.message);
       setOverlay('Could not run pose detection.');
       onLandmarksRef.current(null, true);
@@ -107,8 +114,9 @@ export function ExerciseCamera({ active, onLandmarks, onStatus }: Props) {
       return;
     }
     report('running');
+    poseLog('camera', 0, 'permission=', hasPermission, 'device=', device?.name ?? 'none', 'frameProcessor=', !!poseDetection.frameProcessor);
     setOverlay(null);
-  }, [active, hasPermission, requestPermission, device, report]);
+  }, [active, hasPermission, requestPermission, device, report, poseDetection.frameProcessor]);
 
   if (!active) return null;
 
