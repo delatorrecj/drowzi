@@ -153,11 +153,11 @@ export function createConfigDetector(
       }
       const metric = metricFrom(landmarks);
       lastMetric = metric;
-      prev = landmarks;
       if (metric === null || !Number.isFinite(metric)) {
         trackingLost = true;
         return done;
       }
+      prev = landmarks;
       trackingLost = false;
       return machine.feed(metric);
     },
