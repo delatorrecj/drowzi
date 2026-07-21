@@ -1,7 +1,9 @@
 import {
   bestArmChain,
   bestLegChain,
+  bothLegChains,
   jointAngle,
+  jointAngle2D,
   landmarksMeetConfidence,
   type BlazePoseLandmarkName,
   type PoseLandmarks33,
@@ -86,7 +88,7 @@ export function createConfigDetector(
           unit: 's',
           activeRule: `hold pose for ${target}s`,
           restRule: `pauses ${LOST_PAUSE_MS}ms if pose lost`,
-          chain: null,
+          chains: [],
           repProgress: Math.max(0, Math.min(1, heldMs / 1000 / target)),
         };
       },
@@ -96,7 +98,7 @@ export function createConfigDetector(
   // Reps: build the phase predicates from the spec shape.
   const repSpec = spec; // narrowed to RepChainSpec | RepMetricSpec (hold returned above)
   let lastMetric: number | null = null;
-  let lastChain: PosePoint[] | null = null;
+  let lastChains: PosePoint[][] = [];
   const machine = createRepMachine(
     'chain' in repSpec
       ? {
@@ -117,14 +119,27 @@ export function createConfigDetector(
     if ('chain' in repSpec) {
       if (repSpec.chain === 'arm') {
         const arm = bestArmChain(landmarks, confidenceMin);
-        lastChain = arm ? [arm.shoulder, arm.elbow, arm.wrist] : null;
+        lastChains = arm ? [[arm.shoulder, arm.elbow, arm.wrist]] : [];
         return arm ? jointAngle(arm.shoulder, arm.elbow, arm.wrist) : null;
       }
+      if (repSpec.chain === 'legs') {
+        const legs = bothLegChains(landmarks, confidenceMin);
+        const present = [legs.left, legs.right].filter(
+          (leg): leg is NonNullable<typeof leg> => leg !== null,
+        );
+        lastChains = present.map((leg) => [leg.hip, leg.knee, leg.ankle]);
+        const angles = present
+          .map((leg) => jointAngle2D(leg.hip, leg.knee, leg.ankle))
+          .filter(Number.isFinite);
+        return angles.length > 0
+          ? angles.reduce((sum, angle) => sum + angle, 0) / angles.length
+          : null;
+      }
       const leg = bestLegChain(landmarks, confidenceMin);
-      lastChain = leg ? [leg.hip, leg.knee, leg.ankle] : null;
+      lastChains = leg ? [[leg.hip, leg.knee, leg.ankle]] : [];
       return leg ? jointAngle(leg.hip, leg.knee, leg.ankle) : null;
     }
-    lastChain = null;
+    lastChains = [];
     return repSpec.metric(landmarks, prev);
   }
 
@@ -179,7 +194,7 @@ export function createConfigDetector(
         restRule: isChain
           ? `rest > ${repSpec.restAboveDeg}°`
           : `rest < ${repSpec.restBelow}`,
-        chain: lastChain,
+        chains: lastChains,
         repProgress: repDepth(lastMetric),
       };
     },

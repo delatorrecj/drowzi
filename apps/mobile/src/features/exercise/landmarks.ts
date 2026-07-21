@@ -1,4 +1,4 @@
-import { calculateAngle } from '@/src/features/pushup/geometry';
+import { calculateAngle, calculateAngle2D } from '@/src/features/pushup/geometry';
 import type { PosePoint } from '@/src/features/pushup/poseTypes';
 
 /** BlazePose / ML Kit / MediaPipe 33-point layout. */
@@ -149,8 +149,36 @@ export function bestLegChain(
   return null;
 }
 
+/** Both independently trackable hip-knee-ankle chains. */
+export function bothLegChains(
+  landmarks: PoseLandmarks33,
+  minScore: number,
+): {
+  left: { hip: PosePoint; knee: PosePoint; ankle: PosePoint } | null;
+  right: { hip: PosePoint; knee: PosePoint; ankle: PosePoint } | null;
+} {
+  const confidentChain = (side: 'left' | 'right') => {
+    const leg = legChainFromLandmarks(landmarks, side);
+    if (
+      !leg ||
+      landmarkScore(leg.hip) < minScore ||
+      landmarkScore(leg.knee) < minScore ||
+      landmarkScore(leg.ankle) < minScore
+    ) {
+      return null;
+    }
+    return leg;
+  };
+
+  return { left: confidentChain('left'), right: confidentChain('right') };
+}
+
 export function jointAngle(a: PosePoint, b: PosePoint, c: PosePoint): number {
   return calculateAngle(a, b, c);
+}
+
+export function jointAngle2D(a: PosePoint, b: PosePoint, c: PosePoint): number {
+  return calculateAngle2D(a, b, c);
 }
 
 /** Mid-shoulder to mid-hip distance — a scale-invariant body-size reference. */
@@ -189,4 +217,4 @@ export function movementEnergy(
   return count === 0 ? 0 : sum / count / scale;
 }
 
-export { calculateAngle };
+export { calculateAngle, calculateAngle2D };

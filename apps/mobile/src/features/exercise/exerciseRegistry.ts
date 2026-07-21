@@ -42,14 +42,8 @@ const PUSHUP_LANDMARKS: BlazePoseLandmarkName[] = [
   'rightWrist',
 ];
 
-const SQUAT_LANDMARKS: BlazePoseLandmarkName[] = [
-  'leftHip',
-  'leftKnee',
-  'leftAnkle',
-  'rightHip',
-  'rightKnee',
-  'rightAnkle',
-];
+// Per-side confidence is checked by bothLegChains so one visible leg can still count.
+const SQUAT_LANDMARKS: BlazePoseLandmarkName[] = [];
 
 const JACK_LANDMARKS: BlazePoseLandmarkName[] = [
   'leftShoulder',
@@ -155,7 +149,7 @@ export const EXERCISE_REGISTRY: Record<ExerciseId, ExerciseDefinition> = {
   squats: {
     id: 'squats',
     label: 'Squats',
-    description: 'Count reps from knee bend — phone propped to see legs.',
+    description: 'Face the camera, full legs in frame.',
     verificationMode: 'reps',
     defaultTarget: 10,
     habitType: 'motion',
@@ -163,8 +157,9 @@ export const EXERCISE_REGISTRY: Record<ExerciseId, ExerciseDefinition> = {
     confidenceMin: MOTION_CONFIDENCE_MIN,
     spec: {
       kind: 'reps',
-      chain: 'leg',
-      activeBelowDeg: 100,
+      chain: 'legs',
+      // ponytail: calibration knobs for realistic depth vs accidental partial reps.
+      activeBelowDeg: 110,
       restAboveDeg: 160,
       validators: [torsoVertical],
       minRepIntervalMs: 350,

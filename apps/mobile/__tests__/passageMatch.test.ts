@@ -32,6 +32,22 @@ describe('passageMatches', () => {
     expect(passageMatches('the quick brown fox', passage)).toBe(false);
   });
 
+  it('does not match word fragments', () => {
+    expect(passageMatches('category', 'cat')).toBe(false);
+  });
+
+  it('tolerates a one-character transcription typo', () => {
+    expect(passageMatches('today i wake up on porpose', passage)).toBe(true);
+  });
+
+  it('tolerates alternate homophone spelling', () => {
+    expect(passageMatches('please recognize my voice', 'please recognise my voice')).toBe(true);
+  });
+
+  it('rejects a different passage with similar word lengths', () => {
+    expect(passageMatches('never forget to lock every door', passage)).toBe(false);
+  });
+
   it('rejects empty input', () => {
     expect(passageMatches('', passage)).toBe(false);
     expect(passageMatches('hello', '')).toBe(false);

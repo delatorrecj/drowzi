@@ -14,7 +14,7 @@ import { normalizeMediaPipePose } from '@/src/features/exercise/poseAdapter';
 import type { PoseLandmarks33 } from '@/src/features/exercise/landmarks';
 import { poseLog } from '@/src/features/exercise/poseDebugLog';
 
-const POSE_MODEL = 'pose_landmarker_lite.task';
+const POSE_MODEL = 'pose_landmarker_full.task';
 
 export type ExerciseCameraStatus =
   | 'idle'
@@ -109,9 +109,9 @@ export function ExerciseCamera({ active, facing = 'front', onLandmarks, onStatus
     POSE_MODEL,
     {
       numPoses: 1,
-      minPoseDetectionConfidence: 0.5,
-      minPosePresenceConfidence: 0.5,
-      minTrackingConfidence: 0.5,
+      minPoseDetectionConfidence: 0.6,
+      minPosePresenceConfidence: 0.6,
+      minTrackingConfidence: 0.6,
       delegate: Delegate.GPU,
       mirrorMode: 'mirror-front-only',
       fpsMode: 15,

@@ -17,6 +17,24 @@ function armFrame(bent: boolean): PoseLandmarks33 {
   return lm;
 }
 
+function squatFrame(bent: boolean, hideRight = false): PoseLandmarks33 {
+  const lm = fullBody();
+  const visibility = 0.9;
+  lm[BLAZEPOSE.leftHip] = { x: 0.35, y: 0.3, z: 2, visibility };
+  lm[BLAZEPOSE.leftKnee] = { x: 0.35, y: 0.5, z: -2, visibility };
+  lm[BLAZEPOSE.leftAnkle] = bent
+    ? { x: 0.55, y: 0.5, z: 4, visibility }
+    : { x: 0.35, y: 0.7, z: 4, visibility };
+
+  const rightVisibility = hideRight ? 0.1 : visibility;
+  lm[BLAZEPOSE.rightHip] = { x: 0.65, y: 0.3, z: -3, visibility: rightVisibility };
+  lm[BLAZEPOSE.rightKnee] = { x: 0.65, y: 0.5, z: 3, visibility: rightVisibility };
+  lm[BLAZEPOSE.rightAnkle] = bent
+    ? { x: 0.85, y: 0.5, z: -5, visibility: rightVisibility }
+    : { x: 0.65, y: 0.7, z: -5, visibility: rightVisibility };
+  return lm;
+}
+
 const ARM_REQUIRED = ['leftShoulder', 'leftElbow', 'leftWrist'] as const;
 
 describe('createConfigDetector (reps, chain spec)', () => {
@@ -35,6 +53,36 @@ describe('createConfigDetector (reps, chain spec)', () => {
     expect(det.debug!().repProgress).toBe(0);
     det.feed(armFrame(true)); // ~90 -> at active threshold, ~1
     expect(det.debug!().repProgress).toBeCloseTo(1, 1);
+  });
+
+  it('counts a squat from the average of both 2D knee angles', () => {
+    const spec: ExerciseSpec = {
+      kind: 'reps',
+      chain: 'legs',
+      activeBelowDeg: 110,
+      restAboveDeg: 160,
+    };
+    const det = createConfigDetector(spec, 2, [], 0.6);
+    for (const bent of [false, false, true, true, false, false]) det.feed(squatFrame(bent));
+
+    expect(det.snapshot()).toMatchObject({ reps: 1 });
+    expect(det.debug!().chains).toHaveLength(2);
+  });
+
+  it('counts a squat when only one leg is trackable', () => {
+    const spec: ExerciseSpec = {
+      kind: 'reps',
+      chain: 'legs',
+      activeBelowDeg: 110,
+      restAboveDeg: 160,
+    };
+    const det = createConfigDetector(spec, 2, [], 0.6);
+    for (const bent of [false, false, true, true, false, false]) {
+      det.feed(squatFrame(bent, true));
+    }
+
+    expect(det.snapshot()).toMatchObject({ reps: 1 });
+    expect(det.debug!().chains).toHaveLength(1);
   });
 });
 

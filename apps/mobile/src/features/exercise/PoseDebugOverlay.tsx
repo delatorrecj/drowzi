@@ -42,7 +42,7 @@ export function PoseDebugOverlay({ landmarks, debug, trackingLost }: Props) {
   const onLayout = (e: LayoutChangeEvent) =>
     setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height });
 
-  const chain = debug?.chain ?? null;
+  const chains = debug?.chains ?? [];
   const metricText =
     debug && debug.metric !== null ? `${Math.round(debug.metric)}${debug.unit}` : '—';
   const pct = Math.round((debug?.repProgress ?? 0) * 100);
@@ -61,7 +61,7 @@ export function PoseDebugOverlay({ landmarks, debug, trackingLost }: Props) {
       {box.w > 0 && landmarks
         ? landmarks.map((pt, i) => {
             if (!pt || landmarkScore(pt) < 0.3) return null;
-            const inChain = chain?.some((c) => c === pt) ?? false;
+            const inChain = chains.some((chain) => chain.includes(pt));
             return (
               <Dot
                 key={i}
@@ -69,18 +69,26 @@ export function PoseDebugOverlay({ landmarks, debug, trackingLost }: Props) {
                 w={box.w}
                 h={box.h}
                 r={inChain ? 6 : 3}
-                color={inChain ? '#00E5FF' : 'rgba(255,255,255,0.5)'}
+                color={inChain ? '#00E676' : 'rgba(255,255,255,0.5)'}
               />
             );
           })
         : null}
 
-      {box.w > 0 && chain && chain.length >= 3 ? (
-        <>
-          <Segment a={chain[0]} b={chain[1]} w={box.w} h={box.h} />
-          <Segment a={chain[1]} b={chain[2]} w={box.w} h={box.h} />
-        </>
-      ) : null}
+      {box.w > 0
+        ? chains.flatMap((chain, chainIndex) =>
+            chain.slice(0, -1).map((pt, pointIndex) => (
+              <Segment
+                key={`chain-${chainIndex}-${pointIndex}`}
+                a={pt}
+                b={chain[pointIndex + 1]}
+                w={box.w}
+                h={box.h}
+                color="#00E676"
+              />
+            )),
+          )
+        : null}
 
       <View style={styles.panel}>
         <Text style={styles.line}>

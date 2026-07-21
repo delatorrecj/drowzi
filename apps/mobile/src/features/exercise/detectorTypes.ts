@@ -15,8 +15,8 @@ export type ExerciseDebug = {
   activeRule: string;
   /** Rule that flips back to rest and counts, e.g. "rest > 150°". */
   restRule: string;
-  /** The joints being measured this frame (highlighted in the overlay). */
-  chain: PosePoint[] | null;
+  /** Joint chains being measured this frame (highlighted in the overlay). */
+  chains: PosePoint[][];
   /** 0..1 depth of the current rep: 0 = fully at rest, 1 = full active/bottom. */
   repProgress: number;
 };
@@ -62,10 +62,10 @@ export type MetricFn = (
   prev: PoseLandmarks33 | null,
 ) => number | null;
 
-/** Rep counting off a joint angle in the best-visible arm/leg chain. */
+/** Rep counting off a joint angle in the best-visible arm/leg chain(s). */
 export type RepChainSpec = {
   kind: 'reps';
-  chain: 'arm' | 'leg';
+  chain: 'arm' | 'leg' | 'legs';
   activeBelowDeg: number;
   restAboveDeg: number;
   validators?: Validator[];

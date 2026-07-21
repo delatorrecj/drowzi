@@ -18,3 +18,19 @@ export function calculateAngle(a: PosePoint, b: PosePoint, c: PosePoint): number
   return (Math.acos(cos) * 180) / Math.PI;
 }
 
+/** Angle at b in image space, ignoring unreliable monocular depth. */
+export function calculateAngle2D(a: PosePoint, b: PosePoint, c: PosePoint): number {
+  const abx = a.x - b.x;
+  const aby = a.y - b.y;
+  const cbx = c.x - b.x;
+  const cby = c.y - b.y;
+
+  const dot = abx * cbx + aby * cby;
+  const magAb = Math.hypot(abx, aby);
+  const magCb = Math.hypot(cbx, cby);
+  if (magAb === 0 || magCb === 0) return NaN;
+
+  const cos = Math.max(-1, Math.min(1, dot / (magAb * magCb)));
+  return (Math.acos(cos) * 180) / Math.PI;
+}
+
