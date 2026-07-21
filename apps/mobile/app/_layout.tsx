@@ -15,10 +15,8 @@ import '@/src/platform/visionCameraWorklets';
 
 import { runStorageMigrations } from '@/src/platform/storage';
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+// Custom themed fallback for errors thrown in the navigation tree.
+export { AppErrorBoundary as ErrorBoundary } from '@/src/ui/AppErrorBoundary';
 
 export const unstable_settings = {
   initialRouteName: 'index',
