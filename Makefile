@@ -1,7 +1,7 @@
 MOBILE := apps/mobile
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev test typecheck start start-usb start-tunnel adb-reverse android prebuild build-website
+.PHONY: help install dev test typecheck start start-usb start-tunnel adb-reverse android run-device prebuild build-website
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -32,6 +32,8 @@ adb-reverse: ## Forward Metro port to USB device
 
 android: ## Build + install dev client on USB device (no bundler)
 	cd $(MOBILE) && npm run android:device
+
+run-device: android adb-reverse start-usb ## One-shot: build+install, forward port, start Metro (USB device)
 
 prebuild: ## Regenerate native android/ (only when native deps change)
 	cd $(MOBILE) && npm run prebuild
