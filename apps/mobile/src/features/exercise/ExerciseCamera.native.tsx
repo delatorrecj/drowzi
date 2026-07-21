@@ -146,6 +146,8 @@ export function ExerciseCamera({ active, onLandmarks, onStatus }: Props) {
         style={StyleSheet.absoluteFill}
         device={device}
         isActive={active}
+        // MediaPipe requires RGBA_8888 frames; vision-camera defaults to yuv.
+        pixelFormat="rgb"
         frameProcessor={poseDetection.frameProcessor}
         onLayout={poseDetection.cameraViewLayoutChangeHandler}
         onOutputOrientationChanged={poseDetection.cameraOrientationChangedHandler}
