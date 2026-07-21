@@ -1,6 +1,6 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { alarmSetupStyles as styles } from '@/src/features/alarm/alarmSetupStyles';
+import { AppText, Card, color } from '@/src/ui';
 import type { ExerciseDefinition } from '@/src/features/exercise/exerciseRegistry';
 import type { ExerciseId } from '@/src/shared/types';
 
@@ -18,12 +18,15 @@ export function ExercisePicker({ exercises, selectedId, onSelect }: Props) {
         return (
           <Pressable
             key={ex.id}
-            style={[styles.card, selected && styles.cardSelected]}
             onPress={() => onSelect(ex.id)}
             accessibilityRole="radio"
             accessibilityState={{ selected }}>
-            <Text style={styles.cardTitle}>{ex.label}</Text>
-            <Text style={styles.cardBody}>{ex.description}</Text>
+            <Card selected={selected}>
+              <AppText variant="bodyStrong">{ex.label}</AppText>
+              <AppText variant="caption" color={color.textMuted}>
+                {ex.description}
+              </AppText>
+            </Card>
           </Pressable>
         );
       })}

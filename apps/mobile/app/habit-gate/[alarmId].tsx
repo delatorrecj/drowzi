@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, StyleSheet, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,7 +8,9 @@ import { getAlarmById } from '@/src/platform/alarmStore';
 import { recordHabitCompletion } from '@/src/platform/recordCompletion';
 import { todayLocalDate } from '@/src/shared/date';
 import type { Alarm } from '@/src/shared/types';
-import { fonts, palette } from '@/src/shared/theme';
+import { AppText, Icon, radius } from '@/src/ui';
+import { AlarmPulse } from '@/src/ui/motion';
+import { palette } from '@/src/shared/theme';
 
 export default function HabitGateScreen() {
   const params = useLocalSearchParams<{ alarmId: string | string[] }>();
@@ -62,7 +64,9 @@ export default function HabitGateScreen() {
     return (
       <SafeAreaView style={styles.center}>
         <Stack.Screen options={{ headerShown: false }} />
-        <Text style={styles.error}>Alarm not found.</Text>
+        <AppText variant="body" color={palette.groundedBrown}>
+          Alarm not found.
+        </AppText>
       </SafeAreaView>
     );
   }
@@ -71,15 +75,29 @@ export default function HabitGateScreen() {
     <SafeAreaView style={styles.screen}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <View>
-          <Text style={styles.pretitle}>Wake habit</Text>
-          <Text style={styles.title}>{alarm.time}</Text>
-          <Text style={styles.sub}>{alarm.habitType} · local preview</Text>
+        <View style={{ flex: 1 }}>
+          <View style={styles.pretitleRow}>
+            <Icon name="alarm-bell" size={18} stroke={palette.groundedBrown} />
+            <AppText variant="label" color={palette.groundedBrown}>
+              Wake habit
+            </AppText>
+          </View>
+          <AppText variant="h1" color={palette.groundedBrown} style={styles.title}>
+            {alarm.time}
+          </AppText>
+          <AppText variant="body" color={palette.groundedBrown} style={{ opacity: 0.9 }}>
+            {alarm.habitType} · local preview
+          </AppText>
+          <AlarmPulse style={styles.chip}>
+            <AppText variant="label" color="#FFFFFF" style={{ fontSize: 11 }}>
+              ● Alarm active
+            </AppText>
+          </AlarmPulse>
         </View>
-        <Image 
-          source={require('@/assets/images/mascot/mascot-excited.png')} 
-          style={{ width: 100, height: 100 }} 
-          resizeMode="contain" 
+        <Image
+          source={require('@/assets/images/mascot/mascot-excited.png')}
+          style={{ width: 100, height: 100 }}
+          resizeMode="contain"
         />
       </View>
       <View style={styles.body}>
@@ -102,34 +120,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: palette.awakeningYellow,
   },
-  pretitle: {
-    fontSize: 14,
-    fontFamily: fonts.bodyBold,
-    letterSpacing: 1,
-    color: palette.groundedBrown,
-    opacity: 0.85,
-    textTransform: 'uppercase',
+  pretitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   title: {
     marginTop: 4,
     fontSize: 56,
-    fontFamily: fonts.headlineBlack,
-    color: palette.groundedBrown,
+    lineHeight: 58,
   },
-  sub: {
-    marginTop: 4,
-    fontSize: 16,
-    fontFamily: fonts.body,
-    color: palette.groundedBrown,
-    opacity: 0.9,
+  chip: {
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
   },
   body: {
     flex: 1,
     marginTop: 28,
-  },
-  error: {
-    fontSize: 16,
-    fontFamily: fonts.body,
-    color: palette.groundedBrown,
   },
 });
