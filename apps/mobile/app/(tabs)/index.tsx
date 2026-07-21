@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Image,
   Linking,
   ListRenderItem,
   Platform,
@@ -14,16 +15,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router, useFocusEffect } from 'expo-router';
 
 import type { Alarm } from '@/src/shared/types';
-import { AppText, Badge, Button, MascotEvolution, StatCard, color, space } from '@/src/ui';
+import { AppText, Badge, EmptyState, Icon, MascotEvolution, StatCard, color } from '@/src/ui';
 import { deleteAlarm, getAlarms } from '@/src/platform/alarmStore';
 import {
   formatNextAlarmRingSummary,
   isNotificationPermissionGranted,
 } from '@/src/platform/alarmScheduler';
-import {
-  getConsecutiveDayStreak,
-  getRecentCompletions,
-} from '@/src/platform/recordCompletion';
+import { getDashboardStats, type DashboardStats } from '@/src/platform/recordCompletion';
 import {
   getDisplayName,
   isOnboardingComplete,
@@ -32,6 +30,11 @@ import {
   wasAlarmSetupSkipped,
   wasSetupReminderShown,
 } from '@/src/platform/onboarding';
+import {
+  PRACTICE_GATE_LINKS,
+  PRACTICE_TEST_ALARM_ID,
+} from '@/src/features/practice/practiceDefaults';
+import { mascotAssets } from '@/assets/images/mascot';
 
 function habitLabel(type: Alarm['habitType']): string {
   switch (type) {
@@ -52,10 +55,24 @@ function habitLabel(type: Alarm['habitType']): string {
   }
 }
 
+const EMPTY_STATS: DashboardStats = {
+  totalCompleted: 0,
+  successRate: null,
+  streak: 0,
+  week: [],
+};
+
+const WEEKDAY_INITIALS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+/** localDate (YYYY-MM-DD) → single weekday initial. */
+function weekdayInitial(localDate: string): string {
+  const [y, m, d] = localDate.split('-').map(Number);
+  return WEEKDAY_INITIALS[new Date(y, (m ?? 1) - 1, d ?? 1).getDay()];
+}
+
 export default function DashboardScreen() {
   const [alarms, setAlarms] = useState<Alarm[]>([]);
-  const [recentCount, setRecentCount] = useState(0);
-  const [streak, setStreak] = useState(0);
+  const [stats, setStats] = useState<DashboardStats>(EMPTY_STATS);
   const [onboarded, setOnboarded] = useState(true);
   const [displayName, setDisplayName] = useState('');
   const [nextRingById, setNextRingById] = useState<Record<string, string>>({});
@@ -63,18 +80,16 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const refresh = useCallback(async () => {
-    const [list, recent, done, streakDays, name, notifGranted] = await Promise.all([
+    const [list, dashStats, done, name, notifGranted] = await Promise.all([
       getAlarms(),
-      getRecentCompletions(7),
+      getDashboardStats(),
       isOnboardingComplete(),
-      getConsecutiveDayStreak(),
       getDisplayName(),
       Platform.OS === 'web' ? Promise.resolve(true) : isNotificationPermissionGranted(),
     ]);
-    setAlarms(list);
-    setRecentCount(recent.length);
+    setAlarms(list.filter((a) => a.id !== PRACTICE_TEST_ALARM_ID && !a.id.startsWith('practice-')));
+    setStats(dashStats);
     setOnboarded(done);
-    setStreak(streakDays);
     setDisplayName(name);
     setNotificationAllowed(notifGranted);
 
@@ -175,12 +190,33 @@ export default function DashboardScreen() {
       )}
 
       <View style={styles.heroRow}>
-        <MascotEvolution streak={streak} />
+        <MascotEvolution streak={stats.streak} />
       </View>
 
       <View style={styles.statsRow}>
-        <StatCard value={streak} label="Day streak" />
-        <StatCard value={recentCount} label="Logs (7 days)" />
+        <StatCard value={stats.streak} label="Streak" />
+        <StatCard value={stats.totalCompleted} label="Completed" />
+        <StatCard value={stats.successRate === null ? '—' : `${stats.successRate}%`} label="Success" />
+      </View>
+
+      <View style={styles.weekCard}>
+        <AppText variant="label" color={color.textMuted}>
+          This week
+        </AppText>
+        <View style={styles.weekRow}>
+          {stats.week.map((day) => (
+            <View key={day.date} style={styles.weekCell}>
+              <View style={[styles.weekDot, day.done && styles.weekDotDone]}>
+                {day.done ? (
+                  <Image source={mascotAssets.mascot} style={styles.weekMascot} resizeMode="contain" />
+                ) : null}
+              </View>
+              <AppText variant="caption" color={color.textMuted}>
+                {weekdayInitial(day.date)}
+              </AppText>
+            </View>
+          ))}
+        </View>
       </View>
 
       <View style={styles.sectionHead}>
@@ -203,6 +239,44 @@ export default function DashboardScreen() {
 
   const footer = (
     <View style={styles.footerBlock}>
+      <AppText variant="h2">Practice habit gates</AppText>
+      <AppText variant="caption" color={color.textMuted}>
+        Try each verification mode without waiting for a wake alarm. Camera and mic stay on your device.
+      </AppText>
+      {PRACTICE_GATE_LINKS.map((g) => {
+        const iconName =
+          g.href === '/practice/motion'
+            ? 'motion'
+            : g.href === '/practice/barcode'
+              ? 'barcode'
+              : g.href === '/practice/voice'
+                ? 'voice'
+                : 'alarm-bell';
+        return (
+          <Pressable
+            key={String(g.href)}
+            style={styles.practiceRow}
+            onPress={() => router.push(g.href)}>
+            <View style={styles.practiceIcon}>
+              <Icon name={iconName} size={20} stroke={color.primary} />
+            </View>
+            <View style={styles.practiceCopy}>
+              <View style={styles.practiceTitleRow}>
+                <AppText variant="bodyStrong">{g.title}</AppText>
+                <View style={styles.metaChip}>
+                  <AppText variant="caption" color={color.primary} style={styles.metaChipText}>
+                    {g.meta}
+                  </AppText>
+                </View>
+              </View>
+              <AppText variant="caption" color={color.textMuted}>
+                {g.desc}
+              </AppText>
+            </View>
+          </Pressable>
+        );
+      })}
+
       <Pressable
         style={styles.reset}
         onPress={async () => {
@@ -218,15 +292,12 @@ export default function DashboardScreen() {
   );
 
   const empty = (
-    <View style={styles.empty}>
-      <AppText variant="h3">No alarms yet</AppText>
-      <AppText variant="body" color={color.textMuted} style={{ textAlign: 'center' }}>
-        Run onboarding or add your first habit alarm.
-      </AppText>
-      <Link href="/add-alarm" asChild>
-        <Button title="Set up first alarm" style={{ marginTop: space[2] }} />
-      </Link>
-    </View>
+    <EmptyState
+      icon="alarm-bell"
+      title="No alarms yet"
+      body="Run onboarding or add your first habit alarm to wake up accountable."
+      cta={{ label: 'Set up first alarm', onPress: () => router.push('/add-alarm') }}
+    />
   );
 
   const renderItem: ListRenderItem<Alarm> = ({ item }) => (
@@ -317,6 +388,40 @@ const styles = StyleSheet.create({
   scrollEmpty: { flexGrow: 1 },
   headerBlock: { gap: 16, paddingBottom: 20 },
   footerBlock: { paddingTop: 24, gap: 10 },
+  practiceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: color.surface,
+    borderWidth: 1,
+    borderColor: color.border,
+  },
+  practiceIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: color.bg,
+    borderWidth: 1,
+    borderColor: color.border,
+  },
+  practiceCopy: { flex: 1, gap: 4 },
+  practiceTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  metaChip: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: 'rgba(244, 196, 48, 0.15)',
+  },
+  metaChipText: { fontSize: 10, fontWeight: '700' },
   banner: {
     padding: 14,
     borderRadius: 12,
@@ -335,6 +440,28 @@ const styles = StyleSheet.create({
   warnBanner: { borderWidth: 1, borderColor: color.alarmAccent },
   heroRow: { alignItems: 'center' },
   statsRow: { flexDirection: 'row', gap: 12 },
+  weekCard: {
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: color.surface,
+    borderWidth: 1,
+    borderColor: color.border,
+    gap: 12,
+  },
+  weekRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  weekCell: { alignItems: 'center', gap: 6 },
+  weekDot: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: color.bg,
+    borderWidth: 1,
+    borderColor: color.border,
+  },
+  weekDotDone: { backgroundColor: color.primary, borderColor: color.primary },
+  weekMascot: { width: 28, height: 28 },
   sectionHead: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -349,7 +476,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: color.primary,
   },
-  empty: { paddingVertical: 28, paddingHorizontal: 8, gap: 12, alignItems: 'center' },
   card: {
     padding: 18,
     borderRadius: 16,

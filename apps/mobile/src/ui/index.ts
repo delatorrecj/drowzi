@@ -7,4 +7,5 @@ export { StatCard } from '@/src/ui/StatCard';
 export { Input } from '@/src/ui/Input';
 export { Screen } from '@/src/ui/Screen';
 export { Icon, type IconName } from '@/src/ui/Icon';
+export { EmptyState } from '@/src/ui/EmptyState';
 export { MascotEvolution } from '@/src/ui/MascotEvolution';
