@@ -2,8 +2,27 @@ import { useState } from 'react';
 import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 
 import type { ExerciseDebug } from '@/src/features/exercise/detectorTypes';
-import { landmarkScore, type PoseLandmarks33 } from '@/src/features/exercise/landmarks';
+import { BLAZEPOSE, landmarkScore, type PoseLandmarks33 } from '@/src/features/exercise/landmarks';
 import type { PosePoint } from '@/src/features/pushup/poseTypes';
+
+const B = BLAZEPOSE;
+/** BlazePose skeleton bones (index pairs) — torso, arms, legs. */
+const BONES: [number, number][] = [
+  [B.leftShoulder, B.rightShoulder],
+  [B.leftShoulder, B.leftHip],
+  [B.rightShoulder, B.rightHip],
+  [B.leftHip, B.rightHip],
+  [B.leftShoulder, B.leftElbow],
+  [B.leftElbow, B.leftWrist],
+  [B.rightShoulder, B.rightElbow],
+  [B.rightElbow, B.rightWrist],
+  [B.leftHip, B.leftKnee],
+  [B.leftKnee, B.leftAnkle],
+  [B.leftAnkle, B.leftFootIndex],
+  [B.rightHip, B.rightKnee],
+  [B.rightKnee, B.rightAnkle],
+  [B.rightAnkle, B.rightFootIndex],
+];
 
 type Props = {
   landmarks: PoseLandmarks33 | null;
@@ -30,6 +49,15 @@ export function PoseDebugOverlay({ landmarks, debug, trackingLost }: Props) {
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none" onLayout={onLayout}>
+      {box.w > 0 && landmarks
+        ? BONES.map(([ai, bi], i) => {
+            const a = landmarks[ai];
+            const b = landmarks[bi];
+            if (!a || !b || landmarkScore(a) < 0.3 || landmarkScore(b) < 0.3) return null;
+            return <Segment key={`bone-${i}`} a={a} b={b} w={box.w} h={box.h} color="rgba(255,255,255,0.45)" thickness={2} />;
+          })
+        : null}
+
       {box.w > 0 && landmarks
         ? landmarks.map((pt, i) => {
             if (!pt || landmarkScore(pt) < 0.3) return null;
@@ -87,7 +115,21 @@ function Dot({ pt, w, h, r, color }: { pt: PosePoint; w: number; h: number; r: n
   );
 }
 
-function Segment({ a, b, w, h }: { a: PosePoint; b: PosePoint; w: number; h: number }) {
+function Segment({
+  a,
+  b,
+  w,
+  h,
+  color = '#00E5FF',
+  thickness = 3,
+}: {
+  a: PosePoint;
+  b: PosePoint;
+  w: number;
+  h: number;
+  color?: string;
+  thickness?: number;
+}) {
   const x1 = a.x * w;
   const y1 = a.y * h;
   const x2 = b.x * w;
@@ -99,10 +141,10 @@ function Segment({ a, b, w, h }: { a: PosePoint; b: PosePoint; w: number; h: num
       style={{
         position: 'absolute',
         left: (x1 + x2) / 2 - len / 2,
-        top: (y1 + y2) / 2 - 1.5,
+        top: (y1 + y2) / 2 - thickness / 2,
         width: len,
-        height: 3,
-        backgroundColor: '#00E5FF',
+        height: thickness,
+        backgroundColor: color,
         transform: [{ rotateZ: `${angle}deg` }],
       }}
     />

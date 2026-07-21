@@ -7,6 +7,7 @@
 const lastAt: Record<string, number> = {};
 
 export function poseLog(tag: string, everyMs: number, ...args: unknown[]): void {
+  if (!__DEV__) return;
   const now = Date.now();
   const prev = lastAt[tag];
   if (prev !== undefined && now - prev < everyMs) return;
