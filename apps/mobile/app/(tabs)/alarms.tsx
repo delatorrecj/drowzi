@@ -9,11 +9,12 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router, useFocusEffect } from 'expo-router';
 
 import type { Alarm } from '@/src/shared/types';
-import { AppText, Badge, EmptyState, color } from '@/src/ui';
+import { AppText, Badge, Button, EmptyState, Icon, color, radius, shadow, type IconName } from '@/src/ui';
 import { deleteAlarm, getAlarms } from '@/src/platform/alarmStore';
 import { formatNextAlarmRingSummary } from '@/src/platform/alarmScheduler';
 import { PRACTICE_TEST_ALARM_ID } from '@/src/features/practice/practiceDefaults';
@@ -37,10 +38,28 @@ function habitLabel(type: Alarm['habitType']): string {
   }
 }
 
+function habitIcon(type: Alarm['habitType']): IconName {
+  switch (type) {
+    case 'motion':
+      return 'motion';
+    case 'barcode':
+      return 'barcode';
+    case 'voice':
+      return 'voice';
+    case 'pose':
+      return 'figure';
+    case 'meditation':
+      return 'snooze';
+    default:
+      return 'alarm-bell';
+  }
+}
+
 export default function AlarmsScreen() {
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [nextRingById, setNextRingById] = useState<Record<string, string>>({});
   const [refreshing, setRefreshing] = useState(false);
+  const reduced = useReducedMotion();
 
   const refresh = useCallback(async () => {
     const list = await getAlarms();
@@ -98,59 +117,63 @@ export default function AlarmsScreen() {
     />
   );
 
-  const renderItem: ListRenderItem<Alarm> = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.cardTop}>
-        <AppText variant="h1" style={styles.time}>
-          {item.time}
-        </AppText>
-        <Badge label={habitLabel(item.habitType)} />
-      </View>
-      <AppText variant="bodyStrong" color={color.primary} style={styles.nextRing}>
-        {nextRingById[item.id] ?? '—'}
-      </AppText>
-      <AppText variant="caption" color={color.textMuted} style={{ textTransform: 'capitalize' }}>
-        {item.recurrence.type} · tap Simulate to practise the gate now
-      </AppText>
-      <AppText variant="caption" color={color.text}>
-        Edit time & reps, or remove this alarm.
-      </AppText>
-      <View style={styles.cardActions}>
-        <Pressable
-          style={styles.editAction}
-          accessibilityRole="button"
-          accessibilityLabel={`Edit alarm ${item.time}`}
-          onPress={() => router.push({ pathname: '/add-alarm', params: { id: item.id } })}>
-          <AppText variant="bodyStrong" color={color.primary}>
-            Edit alarm
+  const renderItem: ListRenderItem<Alarm> = ({ item, index }) => {
+    const card = (
+      <View style={styles.card}>
+        <View style={styles.cardTop}>
+          <AppText variant="h1" style={styles.time}>
+            {item.time}
           </AppText>
-        </Pressable>
-        <Pressable
-          style={styles.deleteAction}
-          accessibilityRole="button"
-          accessibilityLabel={`Delete alarm ${item.time}`}
-          onPress={() =>
-            Alert.alert('Delete alarm', `Remove the ${item.time} alarm?`, [
-              { text: 'Cancel', style: 'cancel' },
-              {
-                text: 'Delete',
-                style: 'destructive',
-                onPress: () => void deleteAlarm(item.id).then(() => refresh()),
-              },
-            ])
-          }>
-          <AppText variant="bodyStrong" color={color.alarmAccent}>
-            Delete
+          <View style={styles.habitTag}>
+            <Icon name={habitIcon(item.habitType)} size={18} stroke={color.primary} />
+            <Badge label={habitLabel(item.habitType)} />
+          </View>
+        </View>
+        <View style={styles.nextRingRow}>
+          <Icon name="alarm-bell" size={14} stroke={color.primary} />
+          <AppText variant="bodyStrong" color={color.primary} style={styles.nextRing}>
+            {nextRingById[item.id] ?? '—'}
           </AppText>
-        </Pressable>
-      </View>
-      <Pressable style={styles.simulate} onPress={() => router.push(`/habit-gate/${item.id}`)}>
-        <AppText variant="bodyStrong" color={color.textOnPrimary}>
-          Simulate alarm
+        </View>
+        <AppText variant="caption" color={color.textMuted} style={{ textTransform: 'capitalize' }}>
+          {item.recurrence.type} · tap Simulate to practise the gate now
         </AppText>
-      </Pressable>
-    </View>
-  );
+        <View style={styles.cardActions}>
+          <Button
+            title="Edit"
+            variant="secondary"
+            style={styles.action}
+            accessibilityLabel={`Edit alarm ${item.time}`}
+            onPress={() => router.push({ pathname: '/add-alarm', params: { id: item.id } })}
+          />
+          <Button
+            title="Delete"
+            variant="danger"
+            style={styles.action}
+            accessibilityLabel={`Delete alarm ${item.time}`}
+            onPress={() =>
+              Alert.alert('Delete alarm', `Remove the ${item.time} alarm?`, [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: () => void deleteAlarm(item.id).then(() => refresh()),
+                },
+              ])
+            }
+          />
+        </View>
+        <Button
+          title="Simulate alarm"
+          variant="primary"
+          onPress={() => router.push(`/habit-gate/${item.id}`)}
+        />
+      </View>
+    );
+
+    if (reduced) return card;
+    return <Animated.View entering={FadeInDown.delay(index * 60).duration(400)}>{card}</Animated.View>;
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
@@ -192,63 +215,30 @@ const styles = StyleSheet.create({
   addChip: {
     paddingVertical: 8,
     paddingHorizontal: 14,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     backgroundColor: color.surface,
     borderWidth: 1,
     borderColor: color.primary,
   },
   card: {
     padding: 18,
-    borderRadius: 16,
+    borderRadius: radius.card,
     backgroundColor: color.surface,
     borderWidth: 1,
     borderColor: color.border,
     gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 4,
+    ...shadow.sm,
   },
   cardTop: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
   },
   time: { fontSize: 40, lineHeight: 44, letterSpacing: -1 },
-  nextRing: { marginTop: 6, fontSize: 13 },
-  cardActions: { flexDirection: 'row', flexWrap: 'nowrap', gap: 10, marginTop: 10 },
-  editAction: {
-    flex: 1,
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(244, 196, 48, 0.14)',
-    borderWidth: 2,
-    borderColor: color.primary,
-  },
-  deleteAction: {
-    flex: 1,
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(230, 57, 70, 0.12)',
-    borderWidth: 2,
-    borderColor: color.alarmAccent,
-  },
-  simulate: {
-    marginTop: 4,
-    alignSelf: 'flex-start',
-    paddingVertical: 11,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-    backgroundColor: color.primary,
-    borderWidth: 2,
-    borderColor: color.textOnPrimary,
-  },
+  habitTag: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  nextRingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
+  nextRing: { fontSize: 13 },
+  cardActions: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  action: { flex: 1 },
 });

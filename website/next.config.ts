@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export",
+  // Server mode (no static export) so /api routes run for the OpenAI helpers.
   images: {
     unoptimized: true,
   },

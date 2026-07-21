@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   ExpoSpeechRecognitionModule as SpeechModule,
   useSpeechRecognitionEvent,
@@ -8,7 +8,8 @@ import {
 import type { HabitGateProps } from '@/src/features/habits/gates/types';
 import { useHabitCompletion } from '@/src/features/habits/hooks/useHabitCompletion';
 import { passageMatches } from '@/src/features/voice/passageMatch';
-import { fonts } from '@/src/shared/theme';
+import { AppText, Button, color } from '@/src/ui';
+import { Waveform } from '@/src/ui/motion';
 
 // tsconfig moduleSuffixes (.native/.web) makes tsc resolve this package's .web
 // type, which omits the native control methods. At runtime Metro loads the real
@@ -59,64 +60,58 @@ export function VoiceGate({ alarm, onVerified }: HabitGateProps) {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.copy}>Read your passage aloud to turn off the alarm.</Text>
-      {passage ? <Text style={styles.quote}>{passage}</Text> : null}
+      <AppText variant="bodyStrong" color={color.text} style={styles.copy}>
+        Read your passage aloud to turn off the alarm.
+      </AppText>
+      {passage ? (
+        <AppText variant="body" color={color.textMuted} style={styles.quote}>
+          {passage}
+        </AppText>
+      ) : null}
 
-      {transcript ? <Text style={styles.transcript}>“{transcript}”</Text> : null}
-      {error ? <Text style={styles.warn}>{error}</Text> : null}
+      {listening ? (
+        <View style={styles.listening}>
+          <Waveform />
+          <AppText variant="caption" color={color.textMuted}>
+            Listening…
+          </AppText>
+        </View>
+      ) : null}
 
-      <Pressable
-        style={[styles.primary, (listening || done) && styles.primaryMuted]}
+      {transcript ? (
+        <AppText variant="caption" color={color.textMuted} style={styles.transcript}>
+          “{transcript}”
+        </AppText>
+      ) : null}
+      {error ? (
+        <AppText variant="caption" color={color.alarm} style={styles.transcript}>
+          {error}
+        </AppText>
+      ) : null}
+
+      <Button
+        title={done ? 'Verified' : listening ? 'Listening…' : 'Start listening'}
+        variant="danger"
         onPress={() => void start()}
-        disabled={listening || done}>
-        <Text style={styles.primaryLabel}>
-          {done ? 'Verified' : listening ? 'Listening…' : 'Start listening'}
-        </Text>
-      </Pressable>
+        disabled={listening || done}
+      />
 
-      <Pressable style={styles.demo} onPress={() => void finish()} disabled={done}>
-        <Text style={styles.demoLabel}>Mark verified (dev)</Text>
-      </Pressable>
+      {__DEV__ ? (
+        <Button
+          title="Mark verified (dev)"
+          variant="secondary"
+          onPress={() => void finish()}
+          disabled={done}
+        />
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { gap: 12 },
-  copy: {
-    fontSize: 17,
-    fontFamily: fonts.bodySemiBold,
-    color: '#654321',
-    textAlign: 'center',
-  },
-  quote: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontFamily: fonts.body,
-    color: '#654321',
-    fontStyle: 'italic',
-    paddingHorizontal: 8,
-  },
-  transcript: {
-    fontSize: 14,
-    color: '#654321',
-    opacity: 0.85,
-    textAlign: 'center',
-  },
-  warn: { fontSize: 13, color: '#B23A48', textAlign: 'center' },
-  primary: {
-    paddingVertical: 14,
-    borderRadius: 10,
-    backgroundColor: '#E63946',
-    alignItems: 'center',
-  },
-  primaryMuted: { opacity: 0.6 },
-  primaryLabel: { color: '#fff', fontSize: 16, fontFamily: fonts.bodyBold },
-  demo: {
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#F4C430',
-    alignItems: 'center',
-  },
-  demoLabel: { fontWeight: '700', color: '#654321' },
+  copy: { textAlign: 'center' },
+  quote: { fontStyle: 'italic', textAlign: 'center', paddingHorizontal: 8 },
+  listening: { alignItems: 'center', gap: 8, paddingVertical: 8 },
+  transcript: { textAlign: 'center' },
 });

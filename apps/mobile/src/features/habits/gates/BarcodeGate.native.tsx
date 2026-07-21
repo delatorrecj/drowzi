@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   Camera,
   useCameraDevice,
@@ -9,9 +9,11 @@ import {
 
 import type { HabitGateProps } from '@/src/features/habits/gates/types';
 import { useHabitCompletion } from '@/src/features/habits/hooks/useHabitCompletion';
-import { fonts } from '@/src/shared/theme';
+import { AppText, Button, color, radius } from '@/src/ui';
+import { ScanLine } from '@/src/ui/motion';
 
 const CODE_TYPES = ['qr', 'ean-13', 'ean-8', 'code-128', 'upc-a', 'code-39'] as const;
+const CAMERA_H = 280;
 
 export function BarcodeGate({ alarm, onVerified }: HabitGateProps) {
   const target =
@@ -45,55 +47,75 @@ export function BarcodeGate({ alarm, onVerified }: HabitGateProps) {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.copy}>Scan the registered item to turn off the alarm.</Text>
+      <AppText variant="bodyStrong" color={color.text} style={styles.copy}>
+        Scan the registered item to turn off the alarm.
+      </AppText>
 
       <View style={styles.cameraBox}>
         {cameraActive ? (
-          <Camera
-            style={StyleSheet.absoluteFill}
-            device={device}
-            isActive={cameraActive}
-            codeScanner={codeScanner}
-          />
+          <>
+            <Camera
+              style={StyleSheet.absoluteFill}
+              device={device}
+              isActive={cameraActive}
+              codeScanner={codeScanner}
+            />
+            {/* Viewfinder frame + sweeping scan line for aiming feedback. */}
+            <View style={styles.viewfinder} pointerEvents="none">
+              <ScanLine height={CAMERA_H - 36} />
+            </View>
+          </>
         ) : (
           <View style={styles.overlay}>
-            <Text style={styles.overlayText}>
+            <AppText variant="body" color="#FFFFFF" style={styles.overlayText}>
               {done
                 ? 'Verified.'
                 : !hasPermission
                   ? 'Camera permission is required to scan.'
                   : 'Camera unavailable.'}
-            </Text>
+            </AppText>
           </View>
         )}
       </View>
 
       {!target ? (
-        <Text style={styles.warn}>No barcode configured for this alarm.</Text>
+        <AppText variant="caption" color={color.alarm} style={styles.warn}>
+          No barcode configured for this alarm.
+        </AppText>
       ) : lastSeen && lastSeen !== target && !done ? (
-        <Text style={styles.warn}>Scanned a different code — keep looking for the right item.</Text>
+        <AppText variant="caption" color={color.alarm} style={styles.warn}>
+          Scanned a different code — keep looking for the right item.
+        </AppText>
       ) : null}
 
-      <Pressable style={styles.demo} onPress={() => void finish()} disabled={done}>
-        <Text style={styles.demoLabel}>Mark verified (dev)</Text>
-      </Pressable>
+      {__DEV__ ? (
+        <Button
+          title="Mark verified (dev)"
+          variant="secondary"
+          onPress={() => void finish()}
+          disabled={done}
+        />
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { gap: 12 },
-  copy: {
-    fontSize: 17,
-    fontFamily: fonts.bodySemiBold,
-    color: '#654321',
-    textAlign: 'center',
-  },
+  copy: { textAlign: 'center' },
   cameraBox: {
-    height: 280,
-    borderRadius: 12,
+    height: CAMERA_H,
+    borderRadius: radius.button,
     overflow: 'hidden',
     backgroundColor: '#000',
+  },
+  viewfinder: {
+    ...StyleSheet.absoluteFillObject,
+    margin: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(244, 196, 48, 0.55)',
+    borderRadius: radius.button,
+    overflow: 'hidden',
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -102,13 +124,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 12,
   },
-  overlayText: { color: '#fff', fontWeight: '600', textAlign: 'center' },
-  warn: { fontSize: 13, color: '#B23A48', textAlign: 'center' },
-  demo: {
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#F4C430',
-    alignItems: 'center',
-  },
-  demoLabel: { fontWeight: '700', color: '#654321' },
+  overlayText: { textAlign: 'center' },
+  warn: { textAlign: 'center' },
 });

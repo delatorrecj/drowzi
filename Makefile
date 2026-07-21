@@ -1,7 +1,7 @@
 MOBILE := apps/mobile
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev test typecheck start start-usb start-tunnel adb-reverse android run-device run-device-clean prebuild build-website
+.PHONY: help install dev test typecheck start start-usb start-tunnel adb-reverse android run-device run-device-clean prebuild prebuild-clean gradle-clean fix-android apk apk-install build-website
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -39,6 +39,20 @@ run-device-clean: prebuild run-device ## Prebuild (copy models, link native deps
 
 prebuild: ## Regenerate native android/ (only when native deps change)
 	cd $(MOBILE) && npm run prebuild
+
+prebuild-clean: ## Wipe + regenerate android/ from app.json (fixes stale package name, bundles models)
+	cd $(MOBILE) && npx expo prebuild --clean -p android
+
+gradle-clean: ## Clear stale gradle build cache (removes app/build generated code)
+	cd $(MOBILE)/android && gradlew.bat clean
+
+fix-android: prebuild-clean run-device ## Full fix: wipe+regen native, build+install, forward port, start Metro
+
+apk: ## Build standalone release APK (bundled JS, debug-signed) -> apps/mobile/android/app/build/outputs/apk/release/
+	cd $(MOBILE)/android && gradlew.bat assembleRelease
+
+apk-install: apk ## Build + install the release APK on the connected phone via adb
+	cd $(MOBILE)/android && adb install -r app/build/outputs/apk/release/app-release.apk
 
 build-website: ## Build the website
 	npm run build:website

@@ -3,9 +3,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const outPath = join(__dirname, "..", "public", "models", "pose_landmarker_lite.task");
+const outPath = join(__dirname, "..", "public", "models", "pose_landmarker_full.task");
 const url =
-  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
 
 try {
   await access(outPath);
@@ -22,4 +22,4 @@ if (!res.ok) {
 }
 const buf = Buffer.from(await res.arrayBuffer());
 await writeFile(outPath, buf);
-console.log("[drowzi] Downloaded pose_landmarker_lite.task");
+console.log("[drowzi] Downloaded pose_landmarker_full.task");

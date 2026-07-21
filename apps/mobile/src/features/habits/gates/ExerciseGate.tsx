@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
-import { AppText, Button, radius } from '@/src/ui';
-import { palette } from '@/src/shared/theme';
+import { AppText, Button, color, radius } from '@/src/ui';
 import type { HabitGateProps } from '@/src/features/habits/gates/types';
 import { useAlarmLoop } from '@/src/features/habits/hooks/useAlarmLoop';
 import { ExerciseCamera, type CameraFacing } from '@/src/features/exercise/ExerciseCamera';
@@ -119,13 +118,26 @@ export function ExerciseGate({ alarm, onVerified, standalone }: HabitGateProps) 
     return `${resolved.definition.label}: ${prog}${done ? ' — done' : ''}`;
   }, [done, progress, resolved]);
 
+  const progressPct = useMemo(() => {
+    if (!progress) return 0;
+    const frac =
+      progress.mode === 'reps'
+        ? progress.target > 0
+          ? progress.reps / progress.target
+          : 0
+        : progress.targetSeconds > 0
+          ? progress.heldSeconds / progress.targetSeconds
+          : 0;
+    return Math.max(0, Math.min(1, frac));
+  }, [progress]);
+
   if (!resolved) {
     return (
       <View style={styles.wrap}>
-        <AppText variant="h3" color={palette.groundedBrown}>
+        <AppText variant="h3" color={color.text}>
           Unknown exercise configuration
         </AppText>
-        <AppText variant="body" color={palette.groundedBrown}>
+        <AppText variant="body" color={color.text}>
           Edit the alarm and pick a supported exercise.
         </AppText>
       </View>
@@ -136,15 +148,19 @@ export function ExerciseGate({ alarm, onVerified, standalone }: HabitGateProps) 
 
   return (
     <View style={styles.wrap}>
-      <AppText variant="h3" color={palette.groundedBrown}>
+      <AppText variant="h3" color={color.text}>
         {title}
       </AppText>
-      <AppText variant="body" color={palette.groundedBrown}>
+      <AppText variant="body" color={color.text}>
         {resolved.definition.description}
       </AppText>
-      <AppText variant="caption" color={palette.groundedBrown}>
+      <AppText variant="caption" color={color.textMuted}>
         Alarm loops until you finish. Use HTTPS or localhost on web for the camera.
       </AppText>
+
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${Math.round(progressPct * 100)}%` }]} />
+      </View>
 
       <View style={styles.cameraBox}>
         <ExerciseCamera active={cameraActive} facing={facing} onLandmarks={onLandmarks} />
@@ -176,21 +192,35 @@ export function ExerciseGate({ alarm, onVerified, standalone }: HabitGateProps) 
         onPress={() => setShowDebug((v) => !v)}
       />
 
-      <Button
-        title={
-          resolved.definition.verificationMode === 'reps'
-            ? 'Simulate one rep (fallback)'
-            : 'Simulate hold complete (fallback)'
-        }
-        onPress={simulateOneStep}
-        disabled={done}
-      />
+      {__DEV__ ? (
+        <Button
+          title={
+            resolved.definition.verificationMode === 'reps'
+              ? 'Simulate one rep (fallback)'
+              : 'Simulate hold complete (fallback)'
+          }
+          variant="secondary"
+          onPress={simulateOneStep}
+          disabled={done}
+        />
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { gap: 12 },
+  progressTrack: {
+    height: 8,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(244, 196, 48, 0.18)',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: 8,
+    borderRadius: radius.pill,
+    backgroundColor: color.primary,
+  },
   cameraBox: {
     height: 280,
     borderRadius: radius.button,

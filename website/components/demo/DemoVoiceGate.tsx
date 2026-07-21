@@ -3,10 +3,9 @@
 import { useMemo, useState } from "react";
 
 import { DEMO_VOICE_PASSAGE } from "@/lib/demo/demoDefaults";
-import { todayLocalDate } from "@/lib/demo/date";
 import { demoTheme } from "@/lib/demo/demoTheme";
+import { useDemoGateCompletion } from "@/lib/demo/hooks/useDemoGateCompletion";
 import { passageMatches, useSpeechRecognition } from "@/lib/demo/speech/useSpeechRecognition";
-import { recordHabitCompletion } from "@/lib/demo/storage/db";
 import type { Alarm, VoiceHabitConfig } from "@/lib/demo/types";
 
 type Props = {
@@ -15,11 +14,36 @@ type Props = {
 };
 
 export default function DemoVoiceGate({ alarm, onVerified }: Props) {
-  const passage =
+  const initialPassage =
     (alarm?.habitConfig as VoiceHabitConfig | undefined)?.passageText ?? DEMO_VOICE_PASSAGE;
 
+  const [passage, setPassage] = useState(initialPassage);
+  const [generating, setGenerating] = useState(false);
+  const [aiChecking, setAiChecking] = useState(false);
+  const [aiReason, setAiReason] = useState<string | null>(null);
+
   const { supported, listening, transcript, error, start, stop } = useSpeechRecognition();
-  const [done, setDone] = useState(false);
+  const { done, finish: complete } = useDemoGateCompletion(alarm, "voice", onVerified);
+
+  const newPassage = async () => {
+    setGenerating(true);
+    setAiReason(null);
+    try {
+      const r = await fetch("/api/voice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "generate" }),
+      });
+      if (r.ok) {
+        const { passage: p } = await r.json();
+        if (p) setPassage(p);
+      }
+    } catch {
+      /* keep current passage */
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const matched = passageMatches(transcript, passage);
   const matchPct = useMemo(() => {
@@ -29,17 +53,27 @@ export default function DemoVoiceGate({ alarm, onVerified }: Props) {
 
   const handleVerify = async () => {
     if (!matched) return;
-    setDone(true);
-    if (alarm) {
-      await recordHabitCompletion({
-        alarmId: alarm.id,
-        habitType: "voice",
-        success: true,
-        method: "verified",
-        localDate: todayLocalDate(),
+    await complete();
+  };
+
+  // Fallback when exact match fails: let the LLM judge if it's close enough.
+  const checkWithAi = async () => {
+    setAiChecking(true);
+    setAiReason(null);
+    try {
+      const r = await fetch("/api/voice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "grade", passage, transcript }),
       });
+      const { pass, reason } = await r.json();
+      if (pass) await complete();
+      else setAiReason(reason || "Not quite — try reading it again.");
+    } catch {
+      setAiReason("Could not reach the grader.");
+    } finally {
+      setAiChecking(false);
     }
-    onVerified?.();
   };
 
   const bars = 14;
@@ -66,6 +100,16 @@ export default function DemoVoiceGate({ alarm, onVerified }: Props) {
         >
           &ldquo;{passage}&rdquo;
         </blockquote>
+
+        <button
+          type="button"
+          disabled={generating || listening}
+          onClick={() => void newPassage()}
+          className="self-start rounded-lg border px-3 py-1.5 font-body text-xs text-text-muted disabled:opacity-50"
+          style={{ borderColor: demoTheme.border }}
+        >
+          {generating ? "Generating…" : "✨ New passage"}
+        </button>
 
         {!supported && (
           <p className="text-center text-xs text-alarm">
@@ -112,6 +156,20 @@ export default function DemoVoiceGate({ alarm, onVerified }: Props) {
             Confirm verification
           </button>
         )}
+
+        {!matched && !done && transcript.trim().length > 8 && (
+          <button
+            type="button"
+            disabled={aiChecking}
+            onClick={() => void checkWithAi()}
+            className="w-full rounded-xl border py-3 font-display text-sm font-bold text-text disabled:opacity-50"
+            style={{ borderColor: demoTheme.primary }}
+          >
+            {aiChecking ? "Checking…" : "Close enough? Check with AI"}
+          </button>
+        )}
+
+        {aiReason && <p className="w-full text-xs text-text-muted">{aiReason}</p>}
 
         {done && (
           <p className="w-full rounded-xl bg-primary/20 px-4 py-3 text-center font-display text-sm font-bold text-primary">

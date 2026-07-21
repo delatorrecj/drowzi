@@ -146,6 +146,34 @@ export const alarmSetupStyles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.bodySemiBold,
   },
+  timeDisplayWrap: {
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  timeDisplay: {
+    fontSize: 56,
+    lineHeight: 60,
+    fontFamily: fonts.headlineExtraBold,
+    color: dashboardTheme.text,
+    letterSpacing: -1,
+  },
+  stepperRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 10,
+  },
+  stepper: {
+    flex: 1,
+    paddingHorizontal: 0,
+  },
+  errorText: {
+    marginTop: 6,
+    fontSize: 13,
+    fontFamily: fonts.bodyMedium,
+    color: dashboardTheme.alarmAccent,
+  },
 });
 
 export const alarmSetupScreenOptions = {

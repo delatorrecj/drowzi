@@ -2,6 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build:website",
   "devCommand": "npm run dev:web",
-  "installCommand": "npm run install:website",
-  "outputDirectory": "website/out"
+  "installCommand": "npm run install:website"
 }

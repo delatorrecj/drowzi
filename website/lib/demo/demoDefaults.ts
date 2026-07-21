@@ -5,9 +5,9 @@ export const DEMO_VOICE_PASSAGE =
 
 export const DEMO_BARCODE_VALUE = "DROWZI-DEMO-001";
 
-export const POSE_MODEL_PATH = "/models/pose_landmarker_lite.task";
+export const POSE_MODEL_PATH = "/models/pose_landmarker_full.task";
 export const POSE_MODEL_CDN =
-  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
 
 export const DEFAULT_EXTENDED_MIN = 160;
 export const DEFAULT_BENT_MAX = 90;

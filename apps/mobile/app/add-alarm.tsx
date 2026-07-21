@@ -5,15 +5,14 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 
+import { Button, Input } from '@/src/ui';
 import { ExercisePicker } from '@/src/features/alarm/ExercisePicker';
 import {
   PHYSICAL_EXERCISES,
@@ -39,8 +38,20 @@ export default function AddAlarmScreen() {
   const [repInput, setRepInput] = useState('10');
   const [holdInput, setHoldInput] = useState('30');
   const [exerciseId, setExerciseId] = useState<ExerciseId>('pushups');
+  const [saving, setSaving] = useState(false);
 
   const selectedExercise = getExerciseDefinition(exerciseId);
+  const normalizedTime = normalizeAlarmTime(timeInput);
+  const timeValid = normalizedTime !== null;
+
+  function adjustTime(deltaMinutes: number) {
+    const base = normalizeAlarmTime(timeInput) ?? '07:00';
+    const [h, m] = base.split(':').map(Number);
+    const total = (h * 60 + m + deltaMinutes + 1440) % 1440;
+    const nh = String(Math.floor(total / 60)).padStart(2, '0');
+    const nm = String(total % 60).padStart(2, '0');
+    setTimeInput(`${nh}:${nm}`);
+  }
 
   useEffect(() => {
     if (!editId) return;
@@ -69,10 +80,7 @@ export default function AddAlarmScreen() {
 
   async function handleSave() {
     const time = normalizeAlarmTime(timeInput);
-    if (!time) {
-      Alert.alert('Check the time', 'Use 24h format like 06:30 or 18:45.');
-      return;
-    }
+    if (!time) return; // guarded by disabled Save + inline error
 
     const usePhysicalFields =
       !editing || editing.habitType === 'motion' || editing.habitType === 'pose';
@@ -82,17 +90,22 @@ export default function AddAlarmScreen() {
     const habitConfig = built?.habitConfig ?? editing!.habitConfig;
     const habitType = built?.habitType ?? editing!.habitType;
 
-    const { scheduling } = await saveAlarm({
-      id: editing?.id ?? `alarm-${Date.now()}`,
-      userId: editing?.userId ?? 'local-user',
-      time,
-      recurrence: editing?.recurrence ?? { type: 'daily' },
-      habitType,
-      habitConfig,
-      isActive: editing?.isActive ?? true,
-      createdAt: editing?.createdAt ?? new Date().toISOString(),
-    });
-    notifyIfSchedulingFailed(scheduling);
+    setSaving(true);
+    try {
+      const { scheduling } = await saveAlarm({
+        id: editing?.id ?? `alarm-${Date.now()}`,
+        userId: editing?.userId ?? 'local-user',
+        time,
+        recurrence: editing?.recurrence ?? { type: 'daily' },
+        habitType,
+        habitConfig,
+        isActive: editing?.isActive ?? true,
+        createdAt: editing?.createdAt ?? new Date().toISOString(),
+      });
+      notifyIfSchedulingFailed(scheduling);
+    } finally {
+      setSaving(false);
+    }
 
     router.back();
   }
@@ -146,42 +159,46 @@ export default function AddAlarmScreen() {
             />
 
             <Text style={styles.label}>Wake time (24h)</Text>
-            <TextInput
+            <View style={styles.timeDisplayWrap}>
+              <Text style={styles.timeDisplay}>{normalizedTime ?? timeInput}</Text>
+            </View>
+            <View style={styles.stepperRow}>
+              <Button title="-1h" variant="secondary" style={styles.stepper} onPress={() => adjustTime(-60)} />
+              <Button title="-5m" variant="secondary" style={styles.stepper} onPress={() => adjustTime(-5)} />
+              <Button title="+5m" variant="secondary" style={styles.stepper} onPress={() => adjustTime(5)} />
+              <Button title="+1h" variant="secondary" style={styles.stepper} onPress={() => adjustTime(60)} />
+            </View>
+            <Input
               value={timeInput}
               onChangeText={setTimeInput}
               keyboardType="numbers-and-punctuation"
               placeholder="07:00"
-              placeholderTextColor={dashboardTheme.placeholderMuted}
-              style={styles.input}
             />
+            {!timeValid && timeInput.length > 0 ? (
+              <Text style={styles.errorText}>Use 24h format like 06:30 or 18:45.</Text>
+            ) : null}
 
             {selectedExercise.verificationMode === 'reps' ? (
               <>
                 <Text style={styles.label}>Rep target</Text>
-                <TextInput
-                  value={repInput}
-                  onChangeText={setRepInput}
-                  keyboardType="number-pad"
-                  style={styles.input}
-                />
+                <Input value={repInput} onChangeText={setRepInput} keyboardType="number-pad" />
               </>
             ) : (
               <>
                 <Text style={styles.label}>Hold duration (seconds)</Text>
-                <TextInput
-                  value={holdInput}
-                  onChangeText={setHoldInput}
-                  keyboardType="number-pad"
-                  style={styles.input}
-                />
+                <Input value={holdInput} onChangeText={setHoldInput} keyboardType="number-pad" />
               </>
             )}
           </View>
 
           <View style={styles.footer}>
-            <Pressable style={styles.primary} onPress={() => void handleSave()}>
-              <Text style={styles.primaryLabel}>Save alarm</Text>
-            </Pressable>
+            <Button
+              title="Save alarm"
+              variant="primary"
+              loading={saving}
+              disabled={!timeValid}
+              onPress={() => void handleSave()}
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

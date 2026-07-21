@@ -1,17 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser";
 
 import { DEMO_BARCODE_VALUE } from "@/lib/demo/demoDefaults";
-import { todayLocalDate } from "@/lib/demo/date";
 import { demoTheme } from "@/lib/demo/demoTheme";
-import {
-  listRegisteredBarcodes,
-  recordHabitCompletion,
-  registerBarcode,
-} from "@/lib/demo/storage/db";
+import { useDemoGateCompletion } from "@/lib/demo/hooks/useDemoGateCompletion";
+import { listRegisteredBarcodes, registerBarcode } from "@/lib/demo/storage/db";
 import type { Alarm, BarcodeHabitConfig } from "@/lib/demo/types";
+
+// Require this many consecutive decodes of the expected value before accepting.
+// ponytail: 2-frame confirm; bump if false accepts persist.
+const CONFIRM_FRAMES = 2;
 
 type Props = {
   alarm?: Alarm;
@@ -24,27 +24,20 @@ export default function DemoBarcodeGate({ alarm, onVerified }: Props) {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
-  const [status, setStatus] = useState<"idle" | "scanning" | "matched" | "error">("idle");
+  // Ref (not state) so registering a barcode doesn't tear down the scanner.
+  const registeredRef = useRef<string[]>([]);
+  const confirmRef = useRef(0);
+  const [status, setStatus] = useState<"idle" | "scanning" | "error">("idle");
   const [lastScan, setLastScan] = useState<string | null>(null);
+  const [mismatch, setMismatch] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [registered, setRegistered] = useState<string[]>([]);
 
-  const finish = useCallback(async () => {
-    setStatus("matched");
-    if (alarm) {
-      await recordHabitCompletion({
-        alarmId: alarm.id,
-        habitType: "barcode",
-        success: true,
-        method: "verified",
-        localDate: todayLocalDate(),
-      });
-    }
-    onVerified?.();
-  }, [alarm, onVerified]);
+  const { done, finish } = useDemoGateCompletion(alarm, "barcode", onVerified);
 
   useEffect(() => {
-    void listRegisteredBarcodes().then((rows) => setRegistered(rows.map((r) => r.value)));
+    void listRegisteredBarcodes().then((rows) => {
+      registeredRef.current = rows.map((r) => r.value);
+    });
   }, []);
 
   useEffect(() => {
@@ -58,9 +51,17 @@ export default function DemoBarcodeGate({ alarm, onVerified }: Props) {
       if (result) {
         const text = result.getText();
         setLastScan(text);
-        if (text === expected || registered.includes(text)) {
-          controlsRef.current?.stop();
-          void finish();
+        const ok = text === expected || registeredRef.current.includes(text);
+        if (ok) {
+          setMismatch(false);
+          confirmRef.current += 1;
+          if (confirmRef.current >= CONFIRM_FRAMES) {
+            controlsRef.current?.stop();
+            void finish();
+          }
+        } else {
+          confirmRef.current = 0;
+          setMismatch(true);
         }
       }
       if (err && !String(err).includes("NotFoundException")) {
@@ -74,11 +75,11 @@ export default function DemoBarcodeGate({ alarm, onVerified }: Props) {
       controlsRef.current?.stop();
       controlsRef.current = null;
     };
-  }, [expected, registered, finish]);
+  }, [expected, finish]);
 
   const registerDemo = async () => {
     await registerBarcode(expected, "Demo item");
-    setRegistered((prev) => [...new Set([...prev, expected])]);
+    if (!registeredRef.current.includes(expected)) registeredRef.current.push(expected);
   };
 
   return (
@@ -104,13 +105,19 @@ export default function DemoBarcodeGate({ alarm, onVerified }: Props) {
           Expected: <span className="text-text">{expected}</span>
         </p>
         <p className="mt-2 font-body text-[10px] text-text-muted">
-          Status: {status}
+          Status: {done ? "matched" : status}
           {lastScan ? ` · Last: ${lastScan}` : ""}
         </p>
 
-        {status === "matched" && (
+        {done && (
           <p className="mt-2 rounded-lg bg-primary/20 px-3 py-2 text-center font-display text-xs font-bold text-primary">
             Barcode verified!
+          </p>
+        )}
+
+        {!done && mismatch && (
+          <p className="mt-2 rounded-lg bg-alarm/20 px-3 py-2 text-center font-display text-xs font-bold text-alarm">
+            Different code — keep scanning the right item.
           </p>
         )}
 

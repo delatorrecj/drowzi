@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,14 +11,15 @@ import { recordHabitCompletion } from '@/src/platform/recordCompletion';
 import { todayLocalDate } from '@/src/shared/date';
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
 import type { Alarm } from '@/src/shared/types';
-import { AppText, Icon } from '@/src/ui';
-import { AlarmPulse } from '@/src/ui/motion';
+import { AppText, Button, Icon, color } from '@/src/ui';
+import { AlarmPulse, Bob } from '@/src/ui/motion';
 
 export default function HabitGateScreen() {
   const params = useLocalSearchParams<{ alarmId: string | string[] }>();
   const alarmId = Array.isArray(params.alarmId) ? params.alarmId[0] : params.alarmId;
   const [alarm, setAlarm] = useState<Alarm | null>(null);
   const [loading, setLoading] = useState(true);
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     let cancelled = false;
@@ -72,9 +74,16 @@ export default function HabitGateScreen() {
     return (
       <SafeAreaView style={styles.center}>
         <Stack.Screen options={{ headerShown: false }} />
-        <AppText variant="body" color={dashboardTheme.textOnPrimary}>
-          Alarm not found.
+        <Icon name="alarm-bell" size={48} stroke={dashboardTheme.textOnPrimary} />
+        <AppText variant="h3" color={dashboardTheme.textOnPrimary} style={styles.notFoundTitle}>
+          Alarm not found
         </AppText>
+        <Button
+          title="Back to alarms"
+          variant="secondary"
+          style={styles.notFoundBtn}
+          onPress={() => router.replace('/(tabs)')}
+        />
       </SafeAreaView>
     );
   }
@@ -83,7 +92,9 @@ export default function HabitGateScreen() {
     <SafeAreaView style={styles.screen} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.header}>
+      <Animated.View
+        style={styles.header}
+        entering={reduced ? undefined : FadeInDown.duration(500)}>
         <View style={styles.headerCopy}>
           <View style={styles.pretitleRow}>
             <Icon name="alarm-bell" size={16} stroke={dashboardTheme.textOnPrimary} />
@@ -98,14 +109,16 @@ export default function HabitGateScreen() {
             {alarm.habitType} · alarm ringing
           </AppText>
         </View>
-        <Image
-          source={require('@/assets/images/mascot/mascot-excited.png')}
-          style={styles.mascot}
-          resizeMode="contain"
-        />
-      </View>
+        <Bob>
+          <Image
+            source={require('@/assets/images/mascot/mascot-excited.png')}
+            style={styles.mascot}
+            resizeMode="contain"
+          />
+        </Bob>
+      </Animated.View>
 
-      <AlarmPulse style={styles.banner}>
+      <AlarmPulse from={color.alarm} to={color.alarmAlt} style={styles.banner}>
         <AppText variant="bodyStrong" color="#FFFFFF" style={styles.bannerText}>
           Complete your habit to stop the alarm
         </AppText>
@@ -128,7 +141,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: dashboardTheme.primary,
+    paddingHorizontal: 24,
   },
+  notFoundTitle: { marginTop: 12 },
+  notFoundBtn: { marginTop: 16, alignSelf: 'stretch' },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',

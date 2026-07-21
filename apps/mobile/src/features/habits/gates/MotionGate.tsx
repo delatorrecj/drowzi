@@ -1,9 +1,9 @@
-﻿import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import type { HabitGateProps } from '@/src/features/habits/gates/types';
 import { ExerciseGate } from '@/src/features/habits/gates/ExerciseGate';
 import { resolveExerciseFromAlarm } from '@/src/features/exercise/exerciseRegistry';
-import { fonts } from '@/src/shared/theme';
+import { AppText, color } from '@/src/ui';
 
 /** Physical exercise verification via ML Kit / MediaPipe pose detection. */
 export function MotionGate(props: HabitGateProps) {
@@ -18,7 +18,9 @@ export function MotionGate(props: HabitGateProps) {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.copy}>{silenceCopy}</Text>
+      <AppText variant="bodyStrong" color={color.text} style={styles.copy}>
+        {silenceCopy}
+      </AppText>
       <ExerciseGate {...props} />
     </View>
   );
@@ -26,10 +28,5 @@ export function MotionGate(props: HabitGateProps) {
 
 const styles = StyleSheet.create({
   wrap: { gap: 16 },
-  copy: {
-    fontSize: 17,
-    fontFamily: fonts.bodySemiBold,
-    color: '#654321',
-    textAlign: 'center',
-  },
+  copy: { textAlign: 'center' },
 });
