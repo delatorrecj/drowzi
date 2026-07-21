@@ -1,16 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
+import { AppText, Button, radius } from '@/src/ui';
+import { palette } from '@/src/shared/theme';
 import type { HabitGateProps } from '@/src/features/habits/gates/types';
-import { useHabitCompletion } from '@/src/features/habits/hooks/useHabitCompletion';
-import { ExerciseCamera } from '@/src/features/exercise/ExerciseCamera';
+import { useAlarmLoop } from '@/src/features/habits/hooks/useAlarmLoop';
+import { ExerciseCamera, type CameraFacing } from '@/src/features/exercise/ExerciseCamera';
 import {
   createDetectorForAlarm,
   resolveExerciseFromAlarm,
 } from '@/src/features/exercise/exerciseRegistry';
-import type { ExerciseProgress } from '@/src/features/exercise/detectorTypes';
+import type { ExerciseDebug, ExerciseProgress } from '@/src/features/exercise/detectorTypes';
 import type { PoseLandmarks33 } from '@/src/features/exercise/landmarks';
-import { upsertHabitConfig } from '@/src/platform/habitSqlite';
+import { PoseDebugOverlay } from '@/src/features/exercise/PoseDebugOverlay';
+import { poseLog } from '@/src/features/exercise/poseDebugLog';
+import { recordHabitCompletion } from '@/src/platform/recordCompletion';
+import { todayLocalDate } from '@/src/shared/date';
 
 function progressLabel(progress: ExerciseProgress): string {
   if (progress.mode === 'reps') {
@@ -19,33 +24,44 @@ function progressLabel(progress: ExerciseProgress): string {
   return `${progress.heldSeconds} / ${progress.targetSeconds}s hold`;
 }
 
-export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
+export function ExerciseGate({ alarm, onVerified, standalone }: HabitGateProps) {
   const resolved = resolveExerciseFromAlarm(alarm);
   const [progress, setProgress] = useState<ExerciseProgress | null>(null);
+  const [done, setDone] = useState(false);
   const [reposition, setReposition] = useState(false);
-  const { done, doneRef, finish, reset } = useHabitCompletion(alarm, onVerified);
+  const [showDebug, setShowDebug] = useState(__DEV__);
+  const [facing, setFacing] = useState<CameraFacing>('front');
+  const [debugLandmarks, setDebugLandmarks] = useState<PoseLandmarks33 | null>(null);
+  const [debugInfo, setDebugInfo] = useState<ExerciseDebug | null>(null);
+  useAlarmLoop(!done && !standalone);
+  const doneRef = useRef(false);
   const detectorRef = useRef(createDetectorForAlarm(alarm));
 
   useEffect(() => {
     detectorRef.current = createDetectorForAlarm(alarm);
-    reset();
+    doneRef.current = false;
+    setDone(false);
     setReposition(false);
     const det = detectorRef.current;
     setProgress(det ? det.snapshot() : null);
-  }, [alarm.id, alarm.habitType, alarm.habitConfig, reset]);
+  }, [alarm.id, alarm.habitType, alarm.habitConfig]);
 
-  useEffect(() => {
-    if (!resolved) return;
-    const target =
-      resolved.definition.verificationMode === 'reps'
-        ? { repTarget: resolved.target }
-        : { repTarget: resolved.target };
-    void upsertHabitConfig({
-      alarmId: alarm.id,
-      habitType: alarm.habitType,
-      repTarget: 'repTarget' in target ? target.repTarget : resolved.target,
-    });
-  }, [alarm.habitType, alarm.id, resolved]);
+  const finishVerified = useCallback(async () => {
+    try {
+      await recordHabitCompletion({
+        alarmId: alarm.id,
+        habitType: alarm.habitType,
+        success: true,
+        method: 'verified',
+        localDate: todayLocalDate(),
+      });
+    } catch {
+      // Don't trap the user in a ringing alarm over a storage glitch — inform,
+      // then still clear. Completion may not be recorded in the streak.
+      Alert.alert('Could not save', 'Your completion may not have been recorded, but the alarm will stop.');
+    }
+    await onVerified();
+  }, [alarm.habitType, alarm.id, onVerified]);
 
   const onLandmarks = useCallback(
     (landmarks: PoseLandmarks33 | null, trackingLost: boolean) => {
@@ -55,10 +71,29 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
 
       setReposition(trackingLost || det.isTrackingLost());
       const finished = det.feed(landmarks);
-      setProgress(det.snapshot());
-      if (finished) void finish();
+      const snap = det.snapshot();
+      setProgress(snap);
+      const dbg = det.debug?.() ?? null;
+      poseLog(
+        'gate',
+        1000,
+        'landmarks=', landmarks ? `${landmarks.length}pts` : 'NULL',
+        'trackingLost=', trackingLost || det.isTrackingLost(),
+        'metric=', dbg?.metric ?? '—',
+        'phase=', dbg?.phase ?? '—',
+        'progress=', snap.mode === 'reps' ? `${snap.reps}/${snap.target}` : `${snap.heldSeconds}/${snap.targetSeconds}s`,
+      );
+      if (showDebug) {
+        setDebugLandmarks(landmarks);
+        setDebugInfo(dbg);
+      }
+      if (finished && !doneRef.current) {
+        doneRef.current = true;
+        setDone(true);
+        void finishVerified();
+      }
     },
-    [doneRef, finish],
+    [finishVerified, showDebug],
   );
 
   const simulateOneStep = useCallback(() => {
@@ -71,8 +106,12 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
     const complete =
       (snap.mode === 'reps' && snap.reps >= snap.target) ||
       (snap.mode === 'hold' && snap.heldSeconds >= snap.targetSeconds);
-    if (complete) void finish();
-  }, [doneRef, finish]);
+    if (complete) {
+      doneRef.current = true;
+      setDone(true);
+      void finishVerified();
+    }
+  }, [finishVerified]);
 
   const title = useMemo(() => {
     if (!resolved) return 'Exercise gate';
@@ -83,8 +122,12 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
   if (!resolved) {
     return (
       <View style={styles.wrap}>
-        <Text style={styles.title}>Unknown exercise configuration</Text>
-        <Text style={styles.hint}>Edit the alarm and pick a supported exercise.</Text>
+        <AppText variant="h3" color={palette.groundedBrown}>
+          Unknown exercise configuration
+        </AppText>
+        <AppText variant="body" color={palette.groundedBrown}>
+          Edit the alarm and pick a supported exercise.
+        </AppText>
       </View>
     );
   }
@@ -93,41 +136,64 @@ export function ExerciseGate({ alarm, onVerified }: HabitGateProps) {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.hint}>{resolved.definition.description}</Text>
-      <Text style={styles.hint}>
+      <AppText variant="h3" color={palette.groundedBrown}>
+        {title}
+      </AppText>
+      <AppText variant="body" color={palette.groundedBrown}>
+        {resolved.definition.description}
+      </AppText>
+      <AppText variant="caption" color={palette.groundedBrown}>
         Alarm loops until you finish. Use HTTPS or localhost on web for the camera.
-      </Text>
+      </AppText>
 
       <View style={styles.cameraBox}>
-        <ExerciseCamera active={cameraActive} onLandmarks={onLandmarks} />
+        <ExerciseCamera active={cameraActive} facing={facing} onLandmarks={onLandmarks} />
+        {showDebug && cameraActive ? (
+          <PoseDebugOverlay
+            landmarks={debugLandmarks}
+            debug={debugInfo}
+            trackingLost={reposition}
+          />
+        ) : null}
         {reposition && cameraActive ? (
           <View style={styles.repositionOverlay} pointerEvents="none">
-            <Text style={styles.repositionText}>
+            <AppText variant="bodyStrong" color="#FFFFFF" style={{ textAlign: 'center' }}>
               Reposition camera — show your full body in frame
-            </Text>
+            </AppText>
           </View>
         ) : null}
       </View>
 
-      <Pressable style={styles.demo} onPress={simulateOneStep} disabled={done}>
-        <Text style={styles.demoLabel}>
-          {resolved.definition.verificationMode === 'reps'
+      <Button
+        title={facing === 'front' ? 'Use back camera' : 'Use front camera'}
+        variant="secondary"
+        onPress={() => setFacing((f) => (f === 'front' ? 'back' : 'front'))}
+      />
+
+      <Button
+        title={showDebug ? 'Hide pose debug' : 'Show pose debug'}
+        variant="secondary"
+        onPress={() => setShowDebug((v) => !v)}
+      />
+
+      <Button
+        title={
+          resolved.definition.verificationMode === 'reps'
             ? 'Simulate one rep (fallback)'
-            : 'Simulate hold complete (fallback)'}
-        </Text>
-      </Pressable>
+            : 'Simulate hold complete (fallback)'
+        }
+        onPress={simulateOneStep}
+        disabled={done}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { gap: 12 },
-  title: { fontSize: 18, fontWeight: '700', color: '#654321' },
-  hint: { fontSize: 14, color: '#654321', opacity: 0.9 },
   cameraBox: {
     height: 280,
-    borderRadius: 12,
+    borderRadius: radius.button,
     overflow: 'hidden',
     backgroundColor: '#000',
   },
@@ -137,17 +203,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 12,
   },
-  repositionText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  demo: {
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#F4C430',
-    alignItems: 'center',
-  },
-  demoLabel: { fontWeight: '700', color: '#654321' },
 });

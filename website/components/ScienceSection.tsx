@@ -1,5 +1,11 @@
 import { COPY } from "@/lib/constants";
 
+const DEMO_PROOFS = [
+  { title: "Habit Stacking", body: "Pair a desired action with a reliable cue. The alarm is the cue; your chosen habit becomes the next step." },
+  { title: "Environmental Shift", body: "Changing rooms and starting a simple physical task can help you move out of your usual sleep routine." },
+  { title: "Micro-Commitments", body: "Start with a small action you can repeat, then build momentum from there." },
+] as const;
+
 export default function ScienceSection() {
   return (
     <section className="py-24 px-6 md:px-12 bg-[#2E1F0A]">
@@ -28,7 +34,7 @@ export default function ScienceSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:divide-x"
           style={{ borderColor: "#4A3015" }}
         >
-          {COPY.science.proofs.map((proof, i) => (
+            {DEMO_PROOFS.map((proof) => (
             <div
               key={proof.title}
               className="flex flex-col gap-4 py-8 md:px-10 first:pl-0 last:pr-0"

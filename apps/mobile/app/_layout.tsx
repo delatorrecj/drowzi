@@ -13,12 +13,10 @@ import { useAlarmNotificationResponse } from '@/src/platform/useAlarmNotificatio
 import { fonts, loadAppFonts } from '@/src/shared/theme';
 import '@/src/platform/visionCameraWorklets';
 
-import { ensureHabitSchema } from '@/src/platform/habitSqlite';
+import { runStorageMigrations } from '@/src/platform/storage';
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+// Custom themed fallback for errors thrown in the navigation tree.
+export { AppErrorBoundary as ErrorBoundary } from '@/src/ui/AppErrorBoundary';
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -62,7 +60,7 @@ function RootLayoutNav() {
   useAlarmNotificationResponse();
 
   useEffect(() => {
-    void ensureHabitSchema();
+    void runStorageMigrations();
   }, []);
 
   const colorScheme = useColorScheme();
@@ -81,6 +79,7 @@ function RootLayoutNav() {
           <Stack.Screen name="onboarding" options={{ title: 'Welcome', ...alarmSetupScreenOptions }} />
           <Stack.Screen name="add-alarm" options={{ title: 'Add alarm', ...alarmSetupScreenOptions }} />
           <Stack.Screen name="habit-gate/[alarmId]" options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="practice" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>

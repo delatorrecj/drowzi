@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>Drowzi alarm icon</title>
+  <rect width="512" height="512" rx="116" fill="#1A1209"/>
+  <path d="M148 166 105 123l32-32 46 46M364 166l43-43-32-32-46 46" fill="none" stroke="#F4C430" stroke-linecap="round" stroke-linejoin="round" stroke-width="28"/>
+  <circle cx="256" cy="282" r="145" fill="#F4C430"/>
+  <circle cx="256" cy="282" r="119" fill="#2E1F0A"/>
+  <circle cx="210" cy="268" r="17" fill="#F4C430"/><circle cx="302" cy="268" r="17" fill="#F4C430"/>
+  <path d="M205 333c23 20 79 20 102 0" fill="none" stroke="#F4C430" stroke-linecap="round" stroke-width="18"/>
+  <path d="M256 191v67l48 31" fill="none" stroke="#E63946" stroke-linecap="round" stroke-linejoin="round" stroke-width="18"/>
+  <path d="M198 426h116" stroke="#F4C430" stroke-linecap="round" stroke-width="24"/>
+</svg>

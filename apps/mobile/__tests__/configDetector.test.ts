@@ -27,6 +27,15 @@ describe('createConfigDetector (reps, chain spec)', () => {
     for (const bent of [false, false, true, true, false, false]) det.feed(armFrame(bent));
     expect(det.snapshot()).toMatchObject({ mode: 'reps', reps: 1, target: 2 });
   });
+
+  it('reports repProgress 0 at rest and 1 at full active depth', () => {
+    const spec: ExerciseSpec = { kind: 'reps', chain: 'arm', activeBelowDeg: 90, restAboveDeg: 160 };
+    const det = createConfigDetector(spec, 2, [...ARM_REQUIRED], 0.6);
+    det.feed(armFrame(false)); // ~180 -> above rest, clamps to 0
+    expect(det.debug!().repProgress).toBe(0);
+    det.feed(armFrame(true)); // ~90 -> at active threshold, ~1
+    expect(det.debug!().repProgress).toBeCloseTo(1, 1);
+  });
 });
 
 describe('createConfigDetector (reps, metric spec)', () => {

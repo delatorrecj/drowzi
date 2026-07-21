@@ -6,6 +6,7 @@ import {
   type BlazePoseLandmarkName,
   type PoseLandmarks33,
 } from '@/src/features/exercise/landmarks';
+import type { PosePoint } from '@/src/features/pushup/poseTypes';
 import type { ExerciseDetector, ExerciseSpec, Validator } from '@/src/features/exercise/detectorTypes';
 import { createRepMachine } from '@/src/features/exercise/repStateMachine';
 
@@ -77,11 +78,25 @@ export function createConfigDetector(
         inPose = true;
         trackingLost = false;
       },
+      debug() {
+        return {
+          phase: inPose ? 'in pose' : 'not in pose',
+          metric: Math.floor(heldMs / 1000),
+          metricLabel: 'held',
+          unit: 's',
+          activeRule: `hold pose for ${target}s`,
+          restRule: `pauses ${LOST_PAUSE_MS}ms if pose lost`,
+          chain: null,
+          repProgress: Math.max(0, Math.min(1, heldMs / 1000 / target)),
+        };
+      },
     };
   }
 
   // Reps: build the phase predicates from the spec shape.
   const repSpec = spec; // narrowed to RepChainSpec | RepMetricSpec (hold returned above)
+  let lastMetric: number | null = null;
+  let lastChain: PosePoint[] | null = null;
   const machine = createRepMachine(
     'chain' in repSpec
       ? {
@@ -102,12 +117,30 @@ export function createConfigDetector(
     if ('chain' in repSpec) {
       if (repSpec.chain === 'arm') {
         const arm = bestArmChain(landmarks, confidenceMin);
+        lastChain = arm ? [arm.shoulder, arm.elbow, arm.wrist] : null;
         return arm ? jointAngle(arm.shoulder, arm.elbow, arm.wrist) : null;
       }
       const leg = bestLegChain(landmarks, confidenceMin);
+      lastChain = leg ? [leg.hip, leg.knee, leg.ankle] : null;
       return leg ? jointAngle(leg.hip, leg.knee, leg.ankle) : null;
     }
+    lastChain = null;
     return repSpec.metric(landmarks, prev);
+  }
+
+  const isChain = 'chain' in repSpec;
+
+  // Map the live metric to 0..1 rep depth between the rest and active thresholds.
+  // Chain angle shrinks as you go active (rest > active); metric grows (active > rest).
+  function repDepth(metric: number | null): number {
+    if (metric === null || !Number.isFinite(metric)) return 0;
+    const [rest, active] = isChain
+      ? [repSpec.restAboveDeg, repSpec.activeBelowDeg]
+      : [repSpec.restBelow, repSpec.activeAbove];
+    const span = active - rest;
+    if (span === 0) return 0;
+    const t = (metric - rest) / span;
+    return Math.max(0, Math.min(1, t));
   }
 
   return {
@@ -119,6 +152,7 @@ export function createConfigDetector(
         return done;
       }
       const metric = metricFrom(landmarks);
+      lastMetric = metric;
       if (metric === null || !Number.isFinite(metric)) {
         trackingLost = true;
         return done;
@@ -132,6 +166,22 @@ export function createConfigDetector(
     },
     isTrackingLost() {
       return trackingLost;
+    },
+    debug() {
+      return {
+        phase: machine.snapshot().phase,
+        metric: lastMetric,
+        metricLabel: isChain ? `${repSpec.chain} angle` : 'metric',
+        unit: isChain ? '°' : '',
+        activeRule: isChain
+          ? `active < ${repSpec.activeBelowDeg}°`
+          : `active ≥ ${repSpec.activeAbove}`,
+        restRule: isChain
+          ? `rest > ${repSpec.restAboveDeg}°`
+          : `rest < ${repSpec.restBelow}`,
+        chain: lastChain,
+        repProgress: repDepth(lastMetric),
+      };
     },
     simulateOneStep() {
       // Complete one rep, clearing the frame debounce (2 frames per phase).

@@ -4,9 +4,10 @@ import { habitGateRegistry } from '@/src/features/habits/registry';
 type Props = {
   alarm: Alarm;
   onVerified: () => Promise<void> | void;
+  standalone?: boolean;
 };
 
-export function HabitGateRouter({ alarm, onVerified }: Props) {
+export function HabitGateRouter({ alarm, onVerified, standalone }: Props) {
   const Gate = habitGateRegistry[alarm.habitType];
-  return <Gate alarm={alarm} onVerified={onVerified} />;
+  return <Gate alarm={alarm} onVerified={onVerified} standalone={standalone} />;
 }

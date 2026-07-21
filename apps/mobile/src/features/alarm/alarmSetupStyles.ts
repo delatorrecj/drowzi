@@ -1,6 +1,7 @@
 import { Platform, StyleSheet } from 'react-native';
 
 import { dashboardTheme } from '@/src/shared/dashboardTheme';
+import { fonts } from '@/src/shared/theme';
 
 /** Shared dark DS for onboarding + add-alarm (matches dashboard). */
 export const alarmSetupStyles = StyleSheet.create({
@@ -20,39 +21,41 @@ export const alarmSetupStyles = StyleSheet.create({
   },
   kicker: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     color: dashboardTheme.textMuted,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
   hero: {
     fontSize: 30,
-    fontWeight: '900',
+    fontFamily: fonts.headlineBlack,
     color: dashboardTheme.text,
     lineHeight: 36,
   },
   title: {
     fontSize: 26,
-    fontWeight: '900',
+    fontFamily: fonts.headlineBlack,
     color: dashboardTheme.text,
     lineHeight: 32,
   },
   lede: {
     fontSize: 15,
     lineHeight: 22,
+    fontFamily: fonts.body,
     color: dashboardTheme.textMuted,
     marginBottom: 8,
   },
   body: {
     fontSize: 17,
     lineHeight: 26,
+    fontFamily: fonts.body,
     color: dashboardTheme.text,
   },
   bodyMuted: {
     fontSize: 15,
     lineHeight: 22,
     color: dashboardTheme.textMuted,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   card: {
     padding: 16,
@@ -69,18 +72,19 @@ export const alarmSetupStyles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: fonts.headlineExtraBold,
     color: dashboardTheme.text,
   },
   cardBody: {
     fontSize: 15,
     lineHeight: 22,
+    fontFamily: fonts.body,
     color: dashboardTheme.textMuted,
   },
   label: {
     marginTop: 12,
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     color: dashboardTheme.textMuted,
   },
   input: {
@@ -91,6 +95,7 @@ export const alarmSetupStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: dashboardTheme.border,
     fontSize: 17,
+    fontFamily: fonts.body,
     color: dashboardTheme.text,
     backgroundColor: dashboardTheme.surface,
   },
@@ -116,7 +121,7 @@ export const alarmSetupStyles = StyleSheet.create({
   primaryLabel: {
     color: dashboardTheme.textOnPrimary,
     fontSize: 17,
-    fontWeight: '800',
+    fontFamily: fonts.headlineExtraBold,
   },
   secondary: {
     paddingVertical: 14,
@@ -130,7 +135,7 @@ export const alarmSetupStyles = StyleSheet.create({
   secondaryLabel: {
     color: dashboardTheme.text,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fonts.headlineBold,
   },
   ghost: {
     paddingVertical: 14,
@@ -139,7 +144,7 @@ export const alarmSetupStyles = StyleSheet.create({
   ghostLabel: {
     color: dashboardTheme.textMuted,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 });
 

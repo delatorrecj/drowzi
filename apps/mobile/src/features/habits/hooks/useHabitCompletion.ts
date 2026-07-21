@@ -2,7 +2,6 @@ import { useCallback, useRef, useState } from 'react';
 
 import type { Alarm } from '@/src/shared/types';
 import { useAlarmLoop } from '@/src/features/habits/hooks/useAlarmLoop';
-import { insertHabitLogRow } from '@/src/platform/habitSqlite';
 import { recordHabitCompletion } from '@/src/platform/recordCompletion';
 import { todayLocalDate } from '@/src/shared/date';
 
@@ -20,20 +19,12 @@ export function useHabitCompletion(alarm: Alarm, onVerified: () => Promise<void>
     if (doneRef.current) return;
     doneRef.current = true;
     setDone(true);
-    const localDate = todayLocalDate();
-    await insertHabitLogRow({
-      alarmId: alarm.id,
-      habitType: alarm.habitType,
-      success: true,
-      method: 'verified',
-      localDate,
-    });
     await recordHabitCompletion({
       alarmId: alarm.id,
       habitType: alarm.habitType,
       success: true,
       method: 'verified',
-      localDate,
+      localDate: todayLocalDate(),
     });
     await onVerified();
   }, [alarm.id, alarm.habitType, onVerified]);

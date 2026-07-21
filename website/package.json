@@ -9,6 +9,7 @@
     "start": "node ./node_modules/next/dist/bin/next start",
     "lint": "node ./node_modules/eslint/bin/eslint.js .",
     "test": "node ./node_modules/vitest/vitest.mjs run",
+    "generate:brand-assets": "node scripts/generate-brand-assets.mjs",
     "postinstall": "node scripts/download-pose-model.mjs"
   },
   "dependencies": {

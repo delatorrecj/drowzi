@@ -20,6 +20,18 @@ Pin changes during the hackathon; extend types in `src/shared/types.ts`.
 
 Router entry from alarms: `router.push(\`/habit-gate/${alarm.id}\`)`.
 
+## Practice routes (demo parity)
+
+Standalone drills mirror the website `/demo` hub — not product scheduling:
+
+| Route | Role |
+|-------|------|
+| `/practice/motion\|barcode\|voice` | In-memory practice alarms (`PRACTICE_ALARMS`); `standalone` skips wake sound |
+| `/practice/alarm` | One-shot timer + local notification → `/habit-gate/practice-test-motion` |
+| Dashboard “Practice habit gates” | Links into the routes above |
+
+Product alarms in `alarmStore` remain the source of truth for recurring wakes. Completing a practice test may log a completion against the temporary `practice-test-motion` id; that id is filtered from the Home alarm list.
+
 ## Onboarding (PRD US-05)
 
 First launch hits `/` (`app/index.tsx`) → redirects to `/onboarding` until onboarding is marked complete.

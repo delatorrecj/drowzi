@@ -1,14 +1,16 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import type { HabitGateProps } from '@/src/features/habits/gates/types';
-import { fonts } from '@/src/shared/theme';
+import { AppText, color } from '@/src/ui';
 import { PlaceholderGate } from '@/src/features/habits/gates/PlaceholderGate';
 
-/** Web has no native code scanner here — use the demo fallback. */
+/** Web has no native code scanner — use the demo fallback. */
 export function BarcodeGate(props: HabitGateProps) {
   return (
     <View style={styles.wrap}>
-      <Text style={styles.copy}>Barcode scanning runs on the mobile app.</Text>
+      <AppText variant="bodyStrong" color={color.textMuted} style={styles.copy}>
+        Barcode scanning runs on the mobile app.
+      </AppText>
       <PlaceholderGate {...props} />
     </View>
   );
@@ -16,10 +18,5 @@ export function BarcodeGate(props: HabitGateProps) {
 
 const styles = StyleSheet.create({
   wrap: { gap: 16 },
-  copy: {
-    fontSize: 17,
-    fontFamily: fonts.bodySemiBold,
-    color: '#654321',
-    textAlign: 'center',
-  },
+  copy: { textAlign: 'center' },
 });

@@ -15,8 +15,11 @@
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.axonenjin.drowzi",
+      "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "Drowzi verifies morning habits using the camera (e.g. push-up pose)."
+        "NSCameraUsageDescription": "Drowzi verifies morning habits using the camera (e.g. push-up pose).",
+        "NSMicrophoneUsageDescription": "Drowzi verifies the spoken-passage habit using the microphone."
       }
     },
     "android": {
@@ -26,9 +29,11 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.drowzi",
+      "package": "com.axonenjin.drowzi",
+      "versionCode": 1,
       "permissions": [
         "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.SCHEDULE_EXACT_ALARM",
         "android.permission.VIBRATE"
@@ -42,7 +47,6 @@
     "plugins": [
       "expo-router",
       "expo-dev-client",
-      "expo-sqlite",
       [
         "react-native-mediapipe-posedetection",
         {
