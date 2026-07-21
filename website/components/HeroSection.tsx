@@ -33,22 +33,26 @@ export default function HeroSection() {
 
           {/* Download badges */}
           <div className="flex flex-col sm:flex-row gap-4 mt-2">
-            <a
-              href={SITE.appStoreUrl}
-              className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl font-display font-bold text-sm transition-colors hover:border-[#F4C430]/50"
+            <button
+              type="button"
+              disabled
+              aria-label="App Store — coming soon"
+              className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl font-display font-bold text-sm cursor-not-allowed opacity-60"
               style={{ backgroundColor: "#2E1F0A", color: "#F5E6C8", border: "1px solid #4A3015" }}
             >
               <AppleIcon />
-              App Store
-            </a>
-            <a
-              href={SITE.playStoreUrl}
-              className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl font-display font-bold text-sm transition-colors hover:border-[#F4C430]/50"
+              App Store <span className="text-xs">Coming soon</span>
+            </button>
+            <button
+              type="button"
+              disabled
+              aria-label="Google Play — coming soon"
+              className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl font-display font-bold text-sm cursor-not-allowed opacity-60"
               style={{ backgroundColor: "#2E1F0A", color: "#F5E6C8", border: "1px solid #4A3015" }}
             >
               <GooglePlayIcon />
-              Google Play
-            </a>
+              Google Play <span className="text-xs">Coming soon</span>
+            </button>
             <Link
               href={SITE.demoUrl}
               className="inline-flex items-center justify-center gap-3 px-6 py-3 rounded-2xl font-display font-bold text-sm transition-colors hover:border-[#F4C430]"

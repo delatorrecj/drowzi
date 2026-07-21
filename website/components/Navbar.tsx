@@ -18,12 +18,12 @@ export default function Navbar() {
         >
           {COPY.demo.navLink}
         </Link>
-        <a
-          href="#download"
+        <Link
+          href={SITE.demoUrl}
           className="px-5 py-2 rounded-xl font-display font-bold text-sm transition-colors bg-[#F4C430] text-[#654321] hover:bg-[#D9AC1E]"
         >
-          {COPY.nav.cta}
-        </a>
+          {COPY.demo.heroCta}
+        </Link>
       </div>
     </nav>
   );

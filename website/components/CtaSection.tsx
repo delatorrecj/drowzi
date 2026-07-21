@@ -21,22 +21,26 @@ export default function CtaSection() {
       </h2>
 
       <div className="flex flex-col sm:flex-row gap-4">
-        <a
-          href={SITE.appStoreUrl}
-          className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-display font-bold text-base transition-colors"
+        <button
+          type="button"
+          disabled
+          aria-label="App Store — coming soon"
+          className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-display font-bold text-base cursor-not-allowed opacity-60"
           style={{ backgroundColor: "#654321", color: "#F4C430" }}
         >
           <AppleIcon />
-          App Store
-        </a>
-        <a
-          href={SITE.playStoreUrl}
-          className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-display font-bold text-base transition-colors"
+          App Store <span className="text-xs">Coming soon</span>
+        </button>
+        <button
+          type="button"
+          disabled
+          aria-label="Google Play — coming soon"
+          className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-display font-bold text-base cursor-not-allowed opacity-60"
           style={{ backgroundColor: "#654321", color: "#F4C430" }}
         >
           <GooglePlayIcon />
-          Google Play
-        </a>
+          Google Play <span className="text-xs">Coming soon</span>
+        </button>
         <Link
           href={SITE.demoUrl}
           className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-display font-bold text-base transition-colors"

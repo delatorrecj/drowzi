@@ -26,6 +26,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+:focus-visible {
+  outline: 3px solid #F4C430;
+  outline-offset: 3px;
+}
+
+button:disabled {
+  pointer-events: none;
+}
+
 /* Demo app: lock to viewport on mobile — no document scroll */
 @media (max-width: 767px) {
   html:has([data-demo-app]) {
