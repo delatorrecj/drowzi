@@ -13,7 +13,7 @@ import { useAlarmNotificationResponse } from '@/src/platform/useAlarmNotificatio
 import { fonts, loadAppFonts } from '@/src/shared/theme';
 import '@/src/platform/visionCameraWorklets';
 
-import { ensureHabitSchema } from '@/src/platform/habitSqlite';
+import { runStorageMigrations } from '@/src/platform/storage';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -62,7 +62,7 @@ function RootLayoutNav() {
   useAlarmNotificationResponse();
 
   useEffect(() => {
-    void ensureHabitSchema();
+    void runStorageMigrations();
   }, []);
 
   const colorScheme = useColorScheme();

@@ -61,9 +61,12 @@ export function ExerciseCamera({ active, facing = 'front', onLandmarks, onStatus
       landmarks?: RawLandmark[][];
       results?: { landmarks?: RawLandmark[][] }[];
     };
-    // Log the raw result SHAPE once so we can confirm the parse path matches the
-    // native module's output (landmarks[] vs results[].landmarks[]).
-    poseLog('result-shape', 3000, 'keys=', result ? Object.keys(result) : null, 'sample=', JSON.stringify(result)?.slice(0, 300));
+    // Log the raw result SHAPE so we can confirm the parse path matches the native
+    // module's output. Guarded: JSON.stringify runs per frame otherwise — args
+    // evaluate before poseLog's __DEV__ early-return, so this cost hit production.
+    if (__DEV__) {
+      poseLog('result-shape', 3000, 'keys=', result ? Object.keys(result) : null, 'sample=', JSON.stringify(result)?.slice(0, 300));
+    }
     const raw = bundle.landmarks?.[0] ?? bundle.results?.[0]?.landmarks?.[0];
     // ViewCoordinator maps sensor-space normalized points into the upright,
     // mirror-corrected, cover-cropped VIEW — fixes the rotated / offset skeleton

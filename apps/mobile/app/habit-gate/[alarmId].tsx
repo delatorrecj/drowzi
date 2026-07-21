@@ -40,13 +40,17 @@ export default function HabitGateScreen() {
 
   const onVerified = useCallback(async () => {
     if (!alarm) return;
-    await recordHabitCompletion({
-      alarmId: alarm.id,
-      habitType: alarm.habitType,
-      success: true,
-      method: 'verified',
-      localDate: todayLocalDate(),
-    });
+    try {
+      await recordHabitCompletion({
+        alarmId: alarm.id,
+        habitType: alarm.habitType,
+        success: true,
+        method: 'verified',
+        localDate: todayLocalDate(),
+      });
+    } catch {
+      Alert.alert('Could not save', 'Your completion may not have been recorded, but the alarm will stop.');
+    }
     const isPracticeTest = alarm.id === PRACTICE_TEST_ALARM_ID;
     Alert.alert(
       isPracticeTest ? 'Practice alarm cleared' : 'Alarm cleared',

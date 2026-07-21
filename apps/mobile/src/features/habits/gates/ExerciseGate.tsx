@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import { AppText, Button, radius } from '@/src/ui';
 import { palette } from '@/src/shared/theme';
@@ -14,7 +14,6 @@ import type { ExerciseDebug, ExerciseProgress } from '@/src/features/exercise/de
 import type { PoseLandmarks33 } from '@/src/features/exercise/landmarks';
 import { PoseDebugOverlay } from '@/src/features/exercise/PoseDebugOverlay';
 import { poseLog } from '@/src/features/exercise/poseDebugLog';
-import { upsertHabitConfig, insertHabitLogRow } from '@/src/platform/habitSqlite';
 import { recordHabitCompletion } from '@/src/platform/recordCompletion';
 import { todayLocalDate } from '@/src/shared/date';
 
@@ -47,35 +46,20 @@ export function ExerciseGate({ alarm, onVerified, standalone }: HabitGateProps) 
     setProgress(det ? det.snapshot() : null);
   }, [alarm.id, alarm.habitType, alarm.habitConfig]);
 
-  useEffect(() => {
-    if (!resolved) return;
-    const target =
-      resolved.definition.verificationMode === 'reps'
-        ? { repTarget: resolved.target }
-        : { repTarget: resolved.target };
-    void upsertHabitConfig({
-      alarmId: alarm.id,
-      habitType: alarm.habitType,
-      repTarget: 'repTarget' in target ? target.repTarget : resolved.target,
-    });
-  }, [alarm.habitType, alarm.id, resolved]);
-
   const finishVerified = useCallback(async () => {
-    const localDate = todayLocalDate();
-    await insertHabitLogRow({
-      alarmId: alarm.id,
-      habitType: alarm.habitType,
-      success: true,
-      method: 'verified',
-      localDate,
-    });
-    await recordHabitCompletion({
-      alarmId: alarm.id,
-      habitType: alarm.habitType,
-      success: true,
-      method: 'verified',
-      localDate,
-    });
+    try {
+      await recordHabitCompletion({
+        alarmId: alarm.id,
+        habitType: alarm.habitType,
+        success: true,
+        method: 'verified',
+        localDate: todayLocalDate(),
+      });
+    } catch {
+      // Don't trap the user in a ringing alarm over a storage glitch — inform,
+      // then still clear. Completion may not be recorded in the streak.
+      Alert.alert('Could not save', 'Your completion may not have been recorded, but the alarm will stop.');
+    }
     await onVerified();
   }, [alarm.habitType, alarm.id, onVerified]);
 
